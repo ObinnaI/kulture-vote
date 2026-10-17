@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kulture Night</title>
+<meta name="description" content="Vote on which music videos we watch. 100 points each, max 10 per video.">
+<style>
+  :root {
+    --bg: #0f0f12; --panel: #17171c; --panel2: #202027; --line: #2b2b34;
+    --text: #f2f2f5; --muted: #9a9aa6; --accent: #ff4d6d; --accent2: #ffd166;
+    --ok: #4ade80; --warn: #fbbf24; --bad: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  a { color: inherit; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 1px solid var(--line); background: var(--panel2); border-radius: 10px; padding: 8px 12px; }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.ghost { background: transparent; }
+  input[type=text], input[type=search], textarea, select {
+    width: 100%; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; outline: none; }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 80px; }
+  header { padding: 18px 0 8px; }
+  h1 { margin: 0; font-size: 26px; letter-spacing: -.02em; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .tabs { display: flex; gap: 6px; margin: 14px 0 10px; background: var(--panel); padding: 4px; border-radius: 12px; }
+  .tabs button { flex: 1; border: none; background: transparent; padding: 10px; border-radius: 9px; color: var(--muted); font-weight: 600; }
+  .tabs button.on { background: var(--panel2); color: var(--text); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 10px 0; }
+  .row { display: flex; gap: 10px; align-items: center; }
+  .row > * { min-width: 0; }
+  .grow { flex: 1; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .sticky { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 8px 0; }
+  .budget { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+  .budget .num { font-size: 26px; font-weight: 700; min-width: 60px; }
+  .bar { height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; flex: 1; }
+  .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .15s; }
+  .filters { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  .filters input { flex: 1 1 180px; }
+  .filters select { flex: 0 1 160px; width: auto; }
+  .chip { border-radius: 99px; padding: 8px 12px; font-size: 14px; white-space: nowrap; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .vid { display: grid; grid-template-columns: 96px 1fr; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px; align-items: center; }
+  .vid.picked { border-color: var(--accent); }
+  .vid img { width: 96px; height: 54px; object-fit: cover; border-radius: 8px; background: #000; display: block; }
+  .vid .t { font-weight: 600; font-size: 15px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .vid .m { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .ctl { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+  .ctl button { padding: 6px 0; width: 40px; text-align: center; font-weight: 700; font-size: 18px; line-height: 1; }
+  .ctl .n { width: 34px; text-align: center; font-weight: 700; font-size: 18px; }
+  .ctl .n.on { color: var(--accent); }
+  .ctl .max { width: auto; font-size: 13px; font-weight: 600; padding: 7px 10px; }
+  textarea.code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; min-height: 70px; word-break: break-all; }
+  .msg { font-size: 14px; margin-top: 8px; min-height: 1.4em; }
+  .msg.ok { color: var(--ok); } .msg.warn { color: var(--warn); } .msg.bad { color: var(--bad); }
+  .voters { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+  .voter { display: inline-flex; align-items: center; gap: 8px; background: var(--panel2); border: 1px solid var(--line); border-radius: 99px; padding: 6px 8px 6px 12px; font-size: 14px; }
+  .voter b { color: var(--accent2); }
+  .voter button { padding: 2px 8px; border-radius: 99px; font-size: 13px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 99px; margin-right: 4px; vertical-align: middle; }
+  .res { display: grid; grid-template-columns: 34px 64px 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+  .res.out { opacity: .55; }
+  .res .rank { font-weight: 800; font-size: 18px; color: var(--muted); text-align: center; }
+  .res img { width: 64px; height: 36px; object-fit: cover; border-radius: 6px; background: #000; display: block; }
+  .res .t { font-weight: 600; font-size: 14px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .res .m { color: var(--muted); font-size: 12px; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .res .pts { font-weight: 800; font-size: 20px; text-align: right; }
+  .res .pts small { display: block; font-weight: 500; font-size: 11px; color: var(--muted); }
+  .badge { background: var(--accent2); color: #000; border-radius: 6px; padding: 1px 6px; font-size: 11px; font-weight: 700; }
+  .vd { display: inline-flex; align-items: center; gap: 2px; background: var(--panel2); border-radius: 6px; padding: 1px 6px; font-size: 11px; }
+  .line { text-align: center; color: var(--muted); font-size: 13px; margin: 14px 0 8px; border-top: 2px dashed var(--line); padding-top: 8px; }
+  .range { display: flex; align-items: center; gap: 10px; }
+  .range input { flex: 1; accent-color: var(--accent); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .actions button { flex: 1 1 160px; }
+  .hidden { display: none !important; }
+  .rules { font-size: 14px; color: var(--muted); }
+  .rules b { color: var(--text); }
+  @media (max-width: 420px) { .res { grid-template-columns: 28px 1fr auto; } .res > a { display: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Kulture <span>Night</span></h1>
+    <div class="sub" id="subtitle">Pick what we watch.</div>
+  </header>
+
+  <div class="tabs">
+    <button id="tabVote" class="on">Vote</button>
+    <button id="tabResults">Results</button>
+  </div>
+
+  <!-- ===================== VOTE ===================== -->
+  <section id="vote">
+    <div class="card rules">
+      You have <b>100 points</b>. Put up to <b>10 on any one video</b>. Spread them across the ones you most want to see on the big screen.
+      Your single highest pick is guaranteed a slot. When you're done, tap <b>Copy ballot</b> and paste it in the group chat.
+    </div>
+
+    <div class="card">
+      <label class="small muted" for="name">Your name</label>
+      <input type="text" id="name" placeholder="e.g. Obinna" maxlength="24" autocomplete="off">
+    </div>
+
+    <div class="sticky">
+      <div class="budget">
+        <div><div class="small muted">Points left</div><div class="num" id="left">100</div></div>
+        <div class="bar"><i id="barFill"></i></div>
+        <button class="primary" id="copyBallot">Copy ballot</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="ballotBox">
+      <div class="small muted">Your ballot code. Paste this in the group chat (or send the link).</div>
+      <textarea class="code" id="ballotText" readonly></textarea>
+      <div class="actions">
+        <button id="copyAgain">Copy code</button>
+        <button id="copyLink">Copy share link</button>
+      </div>
+      <div class="msg" id="ballotMsg"></div>
+    </div>
+
+    <div class="filters">
+      <input type="search" id="search" placeholder="Search artist or title">
+      <button class="chip" id="onlyMine">My picks <span id="pickCount">0</span></button>
+      <select id="sort">
+        <option value="playlist">Playlist order</option>
+        <option value="mine">My points</option>
+        <option value="title">A to Z</option>
+      </select>
+    </div>
+
+    <div class="list" id="videoList"></div>
+
+    <div class="actions">
+      <button class="ghost" id="resetVotes">Reset my votes</button>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section id="results" class="hidden">
+    <div class="card">
+      <div class="small muted">Paste the group chat here. Ballot codes are picked out automatically, everything else is ignored.</div>
+      <textarea class="code" id="paste" placeholder="KV1|Name|3:10,17:8,..."></textarea>
+      <div class="actions">
+        <button class="primary" id="addBallots">Add ballots</button>
+        <button class="ghost" id="clearBallots">Clear all</button>
+      </div>
+      <div class="msg" id="pasteMsg"></div>
+      <div class="voters" id="voters"></div>
+    </div>
+
+    <div class="card" id="resultControls">
+      <div class="range">
+        <span class="small muted">Watch</span>
+        <input type="range" id="cutoff" min="10" max="40" step="1" value="25">
+        <b id="cutoffLabel">25</b>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="grow small muted" id="runtime"></div>
+        <select id="order" style="width:auto">
+          <option value="ranked">Ranked order</option>
+          <option value="buildup">Save the best for last</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button class="primary" id="openQueue">Open as YouTube queue</button>
+        <button id="copyList">Copy list</button>
+      </div>
+      <div class="msg" id="resMsg"></div>
+    </div>
+
+    <div class="list" id="resultList"></div>
+  </section>
+</div>
+
+<!--VIDEOS:START--><script id="videos" type="application/json">{"title":"Kulture","url":"https://www.youtube.com/playlist?list=PLZo9Bl-J-gqQ2Xyf1IMfnk-GZc2Y7zi4P","videos":[{"i":0,"id":"toKJP3luQbI","t":"Paramore - Running Out Of Time [OFFICIAL VIDEO]","c":"Paramore","d":216},{"i":1,"id":"b53QJYP-lqY","t":"Troye Sivan - Rush (Official Video)","c":"Troye Sivan","d":223},{"i":2,"id":"VuJ8sawin4k","t":"Tiwa Savage - Mobo Awards Performance","c":"Tiwa Savage","d":198},{"i":3,"id":"ArmDp-zijuc","t":"NewJeans (뉴진스) 'Super Shy' Official MV","c":"HYBE LABELS","d":201},{"i":4,"id":"3sni1ckbBqw","t":"Rebecca Black covers Addison Rae’s ‘Fame is a Gun’ for Like A Version","c":"triple j","d":232},{"i":5,"id":"Yvl4QSAyWR4","t":"Troye Sivan - Party (Official Music Video)","c":"Troye Sivan","d":245},{"i":6,"id":"fYaF00OZ69U","t":"Troye Sivan - FF (Official Music Video)","c":"Troye Sivan","d":292},{"i":7,"id":"mFA1P8ZzoLw","t":"Troye Sivan - She’s the Best (Official Music Video)","c":"Troye Sivan","d":271},{"i":8,"id":"x6_mbnsh6VU","t":"GENER8ION - STORM starring Yung Lean","c":"GENER8ION","d":455},{"i":9,"id":"rwlFWWGaZ5Y","t":"Tate McRae - Revolving door (Official Video)","c":"Tate McRae","d":235},{"i":10,"id":"g_4zfariPCY","t":"Doja Cat - Wet Vagina (Live at Coachella 2024)","c":"Doja Cat","d":348},{"i":11,"id":"qooWnw5rEcI","t":"Mitski - Nobody (Official Video)","c":"Mitski","d":204},{"i":12,"id":"3sB4Iv_tM7U","t":"ADÉLA - Nicole Kidman","c":"ADÉLA","d":222},{"i":13,"id":"gBRi6aZJGj4","t":"Billie Eilish - Bellyache (Official Music Video)","c":"Billie Eilish","d":211},{"i":14,"id":"REPPgPcw4hk","t":"CDK - Somebody That I Used To Know by Gotye","c":"Sergio Reis","d":231},{"i":15,"id":"9l54Rm8evbk","t":"CDK - Bittersuite by Billie Eilish","c":"Sergio Reis","d":167},{"i":16,"id":"g_l-ps0Hrv4","t":"Get loose. Now live.","c":"Gap","d":90},{"i":17,"id":"IwzF26o0AuU","t":"Better in Denim.","c":"Gap","d":91},{"i":18,"id":"8unVMB-LoT8","t":"GAP x Jungle - Linen Moves Campaign (feat. Tyla)","c":"Jungle4eva","d":80},{"i":19,"id":"6eQ6NWuFaCk","t":"Denim on your own.","c":"Gap","d":109},{"i":20,"id":"YRGtgkN-8QU","t":"Roommates - Malcolm Todd (Music Video)","c":"Malcolm Todd","d":246},{"i":21,"id":"qRAJowgHqxA","t":"PinkPantheress - Girl Like Me (Official Video)","c":"Pinkpantheress","d":157},{"i":22,"id":"WDZJPJV__bQ","t":"Beyoncé - Formation (Official Video)","c":"Beyoncé","d":288},{"i":23,"id":"2vjPBrBU-TM","t":"Sia - Chandelier (Official Video)","c":"Sia","d":232},{"i":24,"id":"KWZGAExj-es","t":"Sia - Elastic Heart feat. Shia LaBeouf & Maddie Ziegler (Official Video)","c":"Sia","d":308},{"i":25,"id":"Gj5L9SYhoSE","t":"MARINA AND THE DIAMONDS - PRIMADONNA [Official Music Video] | ♡ ELECTRA HEART PART 4/11 ♡","c":"MARINA","d":239},{"i":26,"id":"vKNcuTWzTVw","t":"MARINA AND THE DIAMONDS - HOW TO BE A HEARTBREAKER [Official Music Video] | ♡ ELECTRA HEART PART 7 ♡","c":"MARINA","d":236},{"i":27,"id":"gDr7aTfBffU","t":"MARINA AND THE DIAMONDS - Blue [Official Music Video]","c":"MARINA","d":232},{"i":28,"id":"WZzcY7ASQno","t":"MARINA AND THE DIAMONDS - Froot [Official Music Video]","c":"MARINA","d":253},{"i":29,"id":"oiKj0Z_Xnjc","t":"Stromae - papaoutai (Official Video)","c":"Stromae","d":233},{"i":30,"id":"0UPDBODtxzw","t":"Tame Impala - Dracula (JENNIE Remix - Official Lyric Video) ft. JENNIE","c":"Tame Impala","d":211},{"i":31,"id":"XFR7v5ix5hU","t":"Madison Beer - make you mine (Official Music Video)","c":"Madison Beer","d":256},{"i":32,"id":"elNce4ixLmE","t":"Hootie Frutti (Choreography Ver.) | KATSEYE","c":"KATSEYE","d":146},{"i":33,"id":"R2-yomhYAj4","t":"KATSEYE (캣츠아이) \"Gnarly\" Official MV","c":"HYBE LABELS","d":142},{"i":34,"id":"lSD_L-xic9o","t":"Laufey - From The Start (Official Music Video)","c":"Laufey","d":170},{"i":35,"id":"obLSGG-oEyw","t":"Laufey - Lover Girl (Official Music Video)","c":"Laufey","d":170},{"i":36,"id":"yNa8jP4zoJo","t":"Laufey - Madwoman (Official Music Video)","c":"Laufey","d":285},{"i":37,"id":"wQtVSNmYCNg","t":"WILLOW - symptom of life","c":"willowsmith","d":230},{"i":38,"id":"DgMxLPnwZgc","t":"Devon Again - cherry cola (official music video)","c":"Devon Again","d":332},{"i":39,"id":"00_7tc6-e54","t":"Devon Again - Suburbia (Official Video)","c":"Devon Again","d":180},{"i":40,"id":"t3jBDhnhS8U","t":"Slayyyter - GAS STATION (Official Video)","c":"slayyyter","d":218},{"i":41,"id":"q3lX2p_Uy9I","t":"Jungle - Back On 74 (Official Video)","c":"Jungle4eva","d":241},{"i":42,"id":"fkmFWfM9sjQ","t":"Jungle - Where Are You Now? (Official Video)","c":"Jungle4eva","d":236},{"i":43,"id":"WJW-VvmRKsE","t":"Charli xcx - 360 (official video)","c":"Charli xcx","d":265},{"i":44,"id":"FSCI9oW5XXI","t":"Reneé Rapp - Snow Angel (Live From Saturday Night Live/2024)","c":"Reneé Rapp","d":240},{"i":45,"id":"0c66ksfigtU","t":"Doja Cat - Agora Hills (Official Video)","c":"Doja Cat","d":311},{"i":46,"id":"i3Jv9fNPjgk","t":"AZEALIA BANKS - 212 FT. LAZY JAY","c":"Azealia Banks","d":206},{"i":47,"id":"EaVL5HIaiNg","t":"BOMBS | Swamp Sessions","c":"Doechii","d":95},{"i":48,"id":"F0cdbR5ognY","t":"Doechii - DENIAL IS A RIVER","c":"Doechii","d":165},{"i":49,"id":"88wHgiUAKoI","t":"Fujii Kaze - Workin’ Hard（Official Video）","c":"Fujii Kaze","d":262},{"i":50,"id":"9YqlmvpWLUg","t":"Aitana, Nicki Nicole - Formentera (video oficial)","c":"Aitana","d":212},{"i":51,"id":"C_yI2959DYU","t":"Doja Cat - Tia Tamera (Official Video) ft. Rico Nasty","c":"Doja Cat","d":234},{"i":52,"id":"yxW5yuzVi8w","t":"Doja Cat - Woman (Official Video)","c":"Doja Cat","d":193},{"i":53,"id":"djV11Xbc914","t":"a-ha - Take On Me (Official Video) [4K]","c":"a-ha","d":244},{"i":54,"id":"vBynw9Isr28","t":"Lady Gaga - Abracadabra (Official Music Video)","c":"Lady Gaga","d":270},{"i":55,"id":"TO2c06p6m5w","t":"Rina Sawayama - XS (Official Video)","c":"Rina Sawayama","d":219},{"i":56,"id":"Vg8a7YpMa24","t":"Jordan Firstman - I Wanna See My Friends Dicks","c":"Jordan Firstman","d":147},{"i":57,"id":"0R3dy3EfM3o","t":"Jordan Firstman - I’m quitting my job tomorri (Official Video)","c":"Jordan Firstman","d":157},{"i":58,"id":"KdJ-Qwu3y4Y","t":"Victoria Monét - On My Mama (Official Video)","c":"Victoria Monét","d":217},{"i":59,"id":"Dh-ULbQmmF8","t":"Ciara - Level Up","c":"Ciara","d":212},{"i":60,"id":"H58vbez_m4E","t":"Kendrick Lamar - Not Like Us","c":"Kendrick Lamar","d":355},{"i":61,"id":"FKXSh14svlQ","t":"Normani - Motivation (Official Video)","c":"Normani","d":238},{"i":62,"id":"4MHRh0vJpEs","t":"Todrick Hall - FAG (Official Music Video)","c":"todrickhall","d":188},{"i":63,"id":"GKSRyLdjsPA","t":"Sia - The Greatest (Official Video)","c":"Sia","d":352},{"i":64,"id":"TdmWJZEbJBU","t":"ANIMA - Thom Yorke - Paul Thomas Anderson - (FT. Netflix playback glitch)","c":"Luke Coutts","d":327},{"i":65,"id":"VYOjWnS4cMY","t":"Childish Gambino - This Is America (Official Video)","c":"Donald Glover","d":245},{"i":66,"id":"5CvwgC-WQlo","t":"Dytto | FRONTROW | World of Dance Bay Area 2015 #WODBAY2015","c":"Official World of Dance","d":302},{"i":67,"id":"Xw6k6Ma0oqo","t":"Royal Family  | FRONTROW | World of Dance Los Angeles 2015 | #WODLA15","c":"Official World of Dance","d":618},{"i":68,"id":"wIgmyE5Juzw","t":"Wallows - Are You Bored Yet? (feat. Clairo) [Official Video]","c":"Wallows","d":207},{"i":69,"id":"GNz9z5gDTjU","t":"Stromae - Mauvaise journée","c":"ZAS VIDEO","d":108},{"i":70,"id":"yJtckcMHM2g","t":"Madonna - \"Confessions II - The Film\"","c":"Madonna","d":835},{"i":71,"id":"pZ12_E5R3qc","t":"Beyoncé - Partition (Explicit Video)","c":"Beyoncé","d":230},{"i":72,"id":"rCHYHx68VcE","t":"Safety Trance - El Alma Que Te Trajo ft. Arca","c":"Boysnoize Records","d":145},{"i":73,"id":"NL-tvd8jeBc","t":"Arca - Prada/Rakata","c":"Arca","d":311},{"i":74,"id":"ykY6st2vw8A","t":"Rakata","c":"Arca","d":152},{"i":75,"id":"cwZ1L_0QLjw","t":"Charli xcx - Von dutch (official video)","c":"Charli xcx","d":214},{"i":76,"id":"zxs0N9_94Zs","t":"ADÉLA - KGB (Official Music Video)","c":"ADÉLA","d":216},{"i":77,"id":"oCvdBnRj67k","t":"ADÉLA - SexOnTheBeat","c":"ADÉLA","d":204},{"i":78,"id":"FyS5dAywkEo","t":"LISA - SaWaDiKa (Official Music Video)","c":"LLOUD Official","d":187},{"i":79,"id":"woLfAvD5iXI","t":"Chappell Roan - The Subway (Official Music Video)","c":"Chappell Roan","d":272},{"i":80,"id":"ePsqyPMIg6I","t":"Chappell Roan - My Kink is Karma (Official Music Video)","c":"Chappell Roan","d":233},{"i":81,"id":"eoi_hd-eils","t":"BORN FROM CULTURE | Georgia","c":"Born From Culture","d":83},{"i":82,"id":"drgj8C2uLAU","t":"NOSEBLEEDS - Dance Visual [4K]","c":"Late Childhood","d":170},{"i":83,"id":"kPnN4IE_a98","t":"GENER8ION feat. Yung Lean Perform \"STORM\" | 2026 VMAs","c":"MTV","d":205},{"i":84,"id":"pHMH408ltEM","t":"ATARASHII GAKKO! - Tokyo Calling (Official Music Video)","c":"88rising","d":207},{"i":85,"id":"SEAkeAn_C1E","t":"Mei Semones - Howl (Official Music Video)","c":"Mei Semones","d":188},{"i":86,"id":"1At_soYSgXo","t":"FLO - Leak It | NARA Choreography","c":"1MILLION Dance Studio","d":129},{"i":87,"id":"fB0inmQHXJU","t":"AMAARAE - ANGELS IN TIBET | RUDI SMIT & UNTIMITIVE DANCE COMPANY","c":"RUDI SMIT","d":172},{"i":88,"id":"dpd0L9IGJeo","t":"CDK - Bohemian Rhapsody by Queen","c":"Sergio Reis","d":243},{"i":89,"id":"LYsb1B80kcc","t":"i hate the way i look today.","c":"Tuan Malinowski","d":48},{"i":90,"id":"iGbeZNqklic","t":"Doechii - NISSAN ALTIMA","c":"Doechii","d":130},{"i":91,"id":"kbMqWXnpXcA","t":"THE CARTERS - APESHIT (Official Video)","c":"Beyoncé","d":365},{"i":92,"id":"itqQS_gpNHM","t":"Kenzo World - Spike Jonze","c":"CollideTV","d":236},{"i":93,"id":"esqRBsVumrw","t":"Jungle - Candle Flame (feat. Erick The Architect) (Official Video)","c":"Jungle4eva","d":234},{"i":94,"id":"dDuKs6NTFDs","t":"Jungle - Don't Play feat. Mood Talk (Official Video)","c":"Jungle4eva","d":253},{"i":95,"id":"lrd5aiw-gv4","t":"Jungle - Move Like You Do (Official Video)","c":"Jungle4eva","d":278},{"i":96,"id":"DW1vUkqNvqQ","t":"Jungle - The Wave (Official Video)","c":"Jungle4eva","d":224},{"i":97,"id":"0aQ9Q0hRTwY","t":"Doechii - Crazy (Official Video)","c":"Doechii","d":193},{"i":98,"id":"KOOhPfMbuIQ","t":"half•alive - still feel. [OFFICIAL VIDEO]","c":"half•alive","d":256},{"i":99,"id":"a9HIaGcBocc","t":"Chloe x Halle - Do It (Official Video)","c":"Chloe x Halle","d":183},{"i":100,"id":"Ob5XQ7oZxxg","t":"Jungle - Come Back To Me (Official Video)","c":"Jungle4eva","d":286},{"i":101,"id":"s3a4OQR-10M","t":"Tame Impala - Loser (Official Video)","c":"Tame Impala","d":268},{"i":102,"id":"e-ORhEE9VVg","t":"Taylor Swift - Blank Space","c":"Taylor Swift","d":273},{"i":103,"id":"w77nJ6BBEhc","t":"Rone - Room With A View (Official Music Video)","c":"Rone","d":274},{"i":104,"id":"9T51n3tvZ3M","t":"Tierra Whack – Unemployed [Official Music Video]","c":"Tierra Whack","d":176},{"i":105,"id":"EOTebhPy04g","t":"Tierra Whack - Whack World","c":"Tierra Whack","d":948},{"i":106,"id":"6-hUzf6sbiw","t":"Rachel Zegler Performs Addison Rae's \"Fame is a Gun\" | Las Culturistas Culture Awards 2026 | Bravo","c":"Bravo","d":224},{"i":107,"id":"c-iv6m0YqGY","t":"Ben Platt - Diet Pepsi (Live) ","c":"Miley's Reborn","d":130},{"i":108,"id":"mPRy1B4t5YA","t":"Charli XCX - Boys [Official Video]","c":"Charli xcx","d":168},{"i":109,"id":"xUF986Rq_68","t":"Malcolm Todd – ‘I Saw Your Face’ (live for Like A Version)","c":"triple j","d":197},{"i":110,"id":"YykjpeuMNEk","t":"Coldplay - Hymn For The Weekend (Official Video)","c":"Coldplay","d":261},{"i":111,"id":"IqzfU9T-UEM","t":"4Me 4Me - Malcolm Todd (Music Video)","c":"Malcolm Todd","d":215},{"i":112,"id":"eDPFVKGXFo8","t":"Aya sato workshop  2014 5 4","c":"IZUMI COMPANY","d":111},{"i":113,"id":"oWhBjfil1wA","t":"Tinashe | \"Nasty\" Millennium Dance Complex Drop-In Class (Choreography by Jojo Gomez)","c":"Tinashe","d":140},{"i":114,"id":"Zpmi3nYXveU","t":"Hoy & Sexy  - Zara Larsson /Choreography by Kiel Tutin","c":"Millennium Dance Complex Los Angeles","d":265},{"i":115,"id":"ugcBgcqFPVc","t":"UNHOLY Sam Smith ft Kim Petras - MICHAEL DAMESKI","c":"Michael Dameski","d":84},{"i":116,"id":"IYlx1_g5Pbg","t":"Mr. Incorrect - Malcolm Todd (Music Video)","c":"Malcolm Todd","d":228},{"i":117,"id":"aBMGvHHkr9Y","t":"Yebba: Tiny Desk (Home) Concert","c":"NPR Music","d":1148},{"i":118,"id":"64_mIv-M6Zc","t":"GIRLS - The Kid LAROI | Wren Crisologo Choreography | GEEKOUT Japan Dance Camp","c":"Wren Crisologo","d":134},{"i":119,"id":"QeIuOx6swvs","t":"Jamaica Moana - 'Tuggawar' feat. wholesoul String Quartet","c":"Songs With Strings","d":183},{"i":120,"id":"8Wi1_i96rTk","t":"M.A.D. | The Get Down 9 | @onsetevents_","c":"STEEZY","d":186},{"i":121,"id":"8bOV8_yRKsc","t":"Tinashe - Party Favors - Choreography by @_TriciaMiranda | @Tinashe - Filmed by @TimMilgram","c":"Tricia Miranda","d":531},{"i":122,"id":"wpjhg1t_g_Y","t":"YUMMY BY JUSTIN BIEBER | A FILM BY PARRIS GOEBEL","c":"Parris Goebel","d":254},{"i":123,"id":"DmC2QQESN6E","t":"WILLOW: Tiny Desk Concert","c":"NPR Music","d":1190},{"i":124,"id":"V9PVRfjEBTI","t":"Billie Eilish - BIRDS OF A FEATHER (Official Music Video)","c":"Billie Eilish","d":231},{"i":125,"id":"FfesqRkdSEk","t":"Chlöe - Have Mercy (Official Video)","c":"Chlöe","d":214},{"i":126,"id":"_cbNqoAeRto","t":"Missy Elliott - WTF (Where They From) @_TriciaMiranda Choreography - Filmed by @TimMilgram","c":"Tricia Miranda","d":337},{"i":127,"id":"jrjESdPsLxE","t":"Tinashe - Nasty (Official Video)","c":"Tinashe","d":180},{"i":128,"id":"9XqdJl3Lmzw","t":"2025 Better in Denim.","c":"GapJapanKK","d":91},{"i":129,"id":"qQjN97Mbkz4","t":"TATE MCRAE - It's ok I'm ok | Kyle Hanagami Choreography","c":"KYLE HANAGAMI","d":194},{"i":130,"id":"qanl1s7K2Kc","t":"Tove Lo - Glad He's Gone","c":"Tove Lo","d":209},{"i":131,"id":"tSTd2pQTb4Q","t":"Rachel Zegler - Fame Is A Gun (Addison Rae cover)","c":"Zegler Source","d":149},{"i":132,"id":"JasHZcNhhYQ","t":"AMAARAE - ANGELS IN TIBET | PROJECT [ORIGINAL CHOREO by ME] #amaarae #angelsintibet","c":" M.O.G","d":140},{"i":133,"id":"f1OO9QhWaWU","t":"It's Ok I'm Ok by Tate Mcrae | Dance Visual, Choreographed & Directed by Kelly Sweeney","c":"Kelly Sweeney","d":116},{"i":134,"id":"yuIB3jmC_0M","t":"STORM II","c":"GENER8ION","d":174},{"i":135,"id":"G6ID6U4Xd7k","t":"The Hunger Games (but better) - A Parody","c":"Grace Reiter","d":2533},{"i":136,"id":"3KQjOE1AuN4","t":"Malcolm Todd - I Saw Your Face (Official Video)","c":"Malcolm Todd","d":193},{"i":137,"id":"sHZXATIqdr4","t":"Doja Cat - Demons (Live at Coachella 2024)","c":"Doja Cat","d":233},{"i":138,"id":"p62rfWxs6a8","t":"Regina Spektor - \"Samson\" [OFFICIAL VIDEO]","c":"Regina Spektor","d":205},{"i":139,"id":"Eq5inG547JA","t":"Regina Spektor: Tiny Desk Concert","c":"NPR Music","d":1463},{"i":140,"id":"MMEpaVL_WsU","t":"Regina Spektor - \"Eet\" [Official Music Video]","c":"Regina Spektor","d":233},{"i":141,"id":"Id_0DsBctYg","t":"MARINA - CUNTISSIMO (Official Video)","c":"MARINA","d":241},{"i":142,"id":"PBkIDKSscqI","t":"Nothing For You (Official Video) | Heartthrob","c":"Rob Anderson","d":193},{"i":143,"id":"sn3cHUtNZKo","t":"Caroline Polachek - So Hot You're Hurting My Feelings (Official Video)","c":"Caroline Polachek","d":194},{"i":144,"id":"0W-N1DqpmiM","t":"Slayyyter - DANCE... (Official Video)","c":"slayyyter","d":288},{"i":145,"id":"-XQTrLq6M8Y","t":"hemlocke springs - sever the blight (Official Video)","c":"hemlocke springs","d":175},{"i":146,"id":"-CHZlc4bbzY","t":"¿Téo? - Uno Dos (feat. Jaden Smith) [Official Music Video 2017]","c":"¿Téo?","d":186},{"i":147,"id":"kbBL3e00qrI","t":"AUDREY NUNA - damn Right (Official Video)","c":"audrey Nuna","d":167},{"i":148,"id":"q0oGhx2JT1A","t":"Victoria Monét - Alright (Official Video)","c":"Victoria Monét","d":194},{"i":149,"id":"knKpN0A6WWQ","t":"Carly Rae Jepsen - Don’t Leave Me on the Dance Floor (Official Music Video)","c":"Carly Rae Jepsen","d":357},{"i":150,"id":"RM7lw0Ovzq0","t":"JAŸ-Z - The Story of O.J.","c":"JAŸ-Z","d":254},{"i":151,"id":"adojY1SI-70","t":"Ian McConnell - Bangladesh (Official Music Video)","c":"Ian McConnell","d":50},{"i":152,"id":"dISEkoPXxXI","t":"Bangladesh (Poodee Edit)","c":"Ian McConnell","d":292},{"i":153,"id":"pt8VYOfr8To","t":"Britney Spears - Work Bitch (Official Video)","c":"Britney Spears","d":235},{"i":154,"id":"IHNzOHi8sJs","t":"BLACKPINK - ‘뚜두뚜두 (DDU-DU DDU-DU)’ M/V","c":"BLACKPINK","d":216},{"i":155,"id":"l8ZXSO1-_EY","t":"BLACKPINK 'DDU DU DDU DU' DANCE VIDEO (Boys Version - Spain)","c":"UY Albert!","d":215},{"i":156,"id":"2XY3AvVgDns","t":"Beyoncé - Countdown (Official Video)","c":"Beyoncé","d":213},{"i":157,"id":"0KQnOFDpotc","t":"Just saying somethings about Women and African-Americans | Standup Desk","c":"Standup Desk","d":558},{"i":158,"id":"K4r4lysSgLE","t":"Beyoncé - Haunted (Official Video)","c":"Beyoncé","d":322},{"i":159,"id":"IyuUWOnS9BY","t":"Beyoncé - ***Flawless ft. Chimamanda Ngozi Adichie","c":"Beyoncé","d":253},{"i":160,"id":"jcF5HtGvX5I","t":"Beyoncé - Yoncé (Video)","c":"Beyoncé","d":123},{"i":161,"id":"L_u97PqWX6g","t":"N.E.R.D & Rihanna - Lemon","c":"NERD","d":189},{"i":162,"id":"4iuGfuwTV1w","t":"Only Gay Guy in the Frat | Conor Janda | Stand Up Comedy","c":"Don't Tell Comedy","d":737},{"i":163,"id":"BFriiyPtF80","t":"Baited ft. Pat Regan - 'Mental Health' | Ziwe","c":"Ziwe","d":585},{"i":164,"id":"BtAz62B51qY","t":"CALEB HEARON IS AN ICONIC GUEST | ZIWE INTERVIEW","c":"Ziwe","d":961},{"i":165,"id":"PjbkafIMdl8","t":"GEORGE SANTOS IS AN ICONIC GUEST | ZIWE INTERVIEW","c":"Ziwe","d":1073},{"i":166,"id":"W8gnITfHTeI","t":"“Pat” Is the Least Sexy Name - Pat Regan - Stand-Up Featuring","c":"Comedy Central Stand-Up","d":367},{"i":167,"id":"5RNy_1odv20","t":"SIENNA SPIRO - Die On This Hill (Official Music Video)","c":"Lyrical Lemonade","d":241},{"i":168,"id":"7PTvxw4fc9M","t":"PLAYLUNCH - Keith (Official Music Video)","c":"Playlunch","d":252},{"i":169,"id":"y4j12_RNkh0","t":"half•alive - BILLIONS / THE WOLF / THE WONDER","c":"half•alive","d":650},{"i":170,"id":"X1qVQH1NRIk","t":"Lucas Pretti - Falo Demais (Clipe Oficial)","c":"Lucas Pretti","d":176},{"i":171,"id":"yPRgUhPZy-w","t":"CupcakKe - Grilling N****S | Lawd Jesus (Official Music Video)","c":"cupcakKe","d":297},{"i":172,"id":"t6sHHHU82aQ","t":"#MeganMonday: I Think I love Her Freestyle","c":"Megan Thee Stallion","d":103},{"i":173,"id":"Jhhd_tEaJEQ","t":"STREETSTAR 2013 - Vogue Femme Final Battle Lasseindra (FRA) vs Ida\"Inxi\" Holmlund (FIN)","c":"streetstar","d":431},{"i":174,"id":"Bc9Y58TeZk0","t":"Chloe x Halle - Forgive Me (Official Video)","c":"Chloe x Halle","d":187},{"i":175,"id":"OPS8WTYqxeM","t":"Chloe x Halle - Ungodly Hour (Official Video)","c":"Chloe x Halle","d":259},{"i":176,"id":"3OYjXb7Yr30","t":"Bree Runway - THAT GIRL (Official Video)","c":"Bree Runway","d":128},{"i":177,"id":"JnqDGWp6CSM","t":"Remi Wolf - Bottle (Official Video)","c":"Remi Wolf","d":294},{"i":178,"id":"xmEjZUULZEw","t":"Devon Again - cherry cola (official lyric video)","c":"Devon Again","d":179},{"i":179,"id":"VueBGZ1VXgc","t":"Remi Wolf - Photo ID (with Dominic Fike) (Official Video)","c":"Remi Wolf","d":214},{"i":180,"id":"9wHLO_mWRl8","t":"[SWF2] Battle Performance Jam Republic Dance Mirror","c":"Kboppit","d":117},{"i":181,"id":"FUhGgbndrLw","t":"Devon Again - gum v6.4 (Official Video)","c":"Devon Again","d":329},{"i":182,"id":"lJM-z0ohbkc","t":"FULL CIRCLE BOYS - BLEACHERS (Official Music Video)","c":"FULL CIRCLE BOYS","d":153},{"i":183,"id":"ekD1dTsM3Ng","t":"#MeganMonday: Like A G6 Freestyle","c":"Megan Thee Stallion","d":86},{"i":184,"id":"5YI6cjJZtxI","t":"Adam Oh, Cakes Da Killa & Baby Tate - BIRDS & THE BEES (Official Music Video)","c":"ADAM OH","d":217},{"i":185,"id":"AfGPYMgj4-8","t":"WILLOW - b i g f e e l i n g s (Official Visualizer)","c":"willowsmith","d":257},{"i":186,"id":"-s7TCuCpB5c","t":"Tinashe - 2 On (Official Video) ft. SchoolBoy Q","c":"Tinashe","d":231},{"i":187,"id":"sqk1-q8gXcY","t":"One of the Worst The Price Is Right Players Ever","c":"Shaun Davis","d":321},{"i":188,"id":"Em-zDxVv0Gs","t":"Beyoncé - Partition [Official Music Video]","c":"Bad Boy Edd","d":230},{"i":189,"id":"BS46C2z5lVE","t":"Route 94 - My Love (Official Video) ft. Jess Glynne","c":"Route 94","d":191},{"i":190,"id":"jlRoEVujTEk","t":"DJ_Dave - Next to U [Official Music Video]","c":"DJ_Dave","d":177},{"i":191,"id":"TGwZ7MNtBFU","t":"Gwen Stefani - Cool (Official Music Video)","c":"Gwen Stefani","d":248},{"i":192,"id":"6Wva3UTUYtM","t":"The Veronicas - ’Untouched’ (live for Like A Version)","c":"triple j","d":262}]}</script><!--VIDEOS:END-->
+<script>
+(() => {
+  const BUDGET = 100, CAP = 10, VER = 'KV1';
+  const DATA = JSON.parse(document.getElementById('videos').textContent);
+  const VIDEOS = DATA.videos;
+  const byIndex = new Map(VIDEOS.map(v => [v.i, v]));
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt = s => { const m = Math.floor(s/60), r = s%60; return m + ':' + String(r).padStart(2,'0'); };
+  const fmtLong = s => { const h = Math.floor(s/3600), m = Math.round((s%3600)/60); return h ? `${h}h ${m}m` : `${m}m`; };
+  const thumb = id => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+  const watch = id => `https://www.youtube.com/watch?v=${id}`;
+  const COLORS = ['#ff4d6d','#4cc9f0','#ffd166','#06d6a0','#c77dff','#f8961e','#90e0ef','#ef476f'];
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('kv.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('kv.' + k, JSON.stringify(v)); } catch {} },
+  };
+
+  $('subtitle').textContent = `${VIDEOS.length} videos in "${DATA.title}". 100 points each, max 10 per video.`;
+
+  // ---------- tabs ----------
+  function showTab(name) {
+    const vote = name === 'vote';
+    $('vote').classList.toggle('hidden', !vote);
+    $('results').classList.toggle('hidden', vote);
+    $('tabVote').classList.toggle('on', vote);
+    $('tabResults').classList.toggle('on', !vote);
+    if (!vote) renderResults();
+  }
+  $('tabVote').onclick = () => showTab('vote');
+  $('tabResults').onclick = () => showTab('results');
+
+  // ---------- vote state ----------
+  let votes = store.get('votes', {});
+  for (const k of Object.keys(votes)) if (!byIndex.has(+k) || !(votes[k] > 0)) delete votes[k];
+  let onlyMine = false;
+  $('name').value = store.get('name', '');
+  $('name').addEventListener('input', () => { store.set('name', $('name').value.trim()); $('ballotBox').classList.add('hidden'); });
+
+  const spent = () => Object.values(votes).reduce((a, b) => a + b, 0);
+  const left = () => BUDGET - spent();
+
+  function setVote(i, n) {
+    n = Math.max(0, Math.min(CAP, n));
+    const cur = votes[i] || 0;
+    if (n - cur > left()) n = cur + left();
+    if (n > 0) votes[i] = n; else delete votes[i];
+    store.set('votes', votes);
+    $('ballotBox').classList.add('hidden');
+    updateBudget();
+    updateRow(i);
+  }
+
+  function updateBudget() {
+    const l = left();
+    $('left').textContent = l;
+    $('left').style.color = l === 0 ? 'var(--ok)' : '';
+    $('barFill').style.width = (spent() / BUDGET * 100) + '%';
+    $('pickCount').textContent = Object.keys(votes).length;
+    $('copyBallot').disabled = spent() === 0;
+  }
+
+  function rowHtml(v) {
+    const n = votes[v.i] || 0;
+    return `<div class="vid${n ? ' picked' : ''}" data-i="${v.i}">
+      <a href="${watch(v.id)}" target="_blank" rel="noopener" title="Preview on YouTube"><img loading="lazy" src="${thumb(v.id)}" alt=""></a>
+      <div>
+        <div class="t">${esc(v.t)}</div>
+        <div class="m">${esc(v.c)} · ${fmt(v.d)}</div>
+        <div class="ctl">
+          <button data-a="dec" ${n ? '' : 'disabled'}>−</button>
+          <span class="n${n ? ' on' : ''}">${n}</span>
+          <button data-a="inc" ${(n >= CAP || left() === 0) ? 'disabled' : ''}>+</button>
+          <button class="max" data-a="max" ${(n >= CAP || left() === 0) ? 'disabled' : ''}>Max</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function updateRow(i) {
+    const v = byIndex.get(i);
+    const el = $('videoList').querySelector(`.vid[data-i="${i}"]`);
+    if (el && v) el.outerHTML = rowHtml(v);
+    // budget exhaustion changes other rows' + buttons
+    const exhausted = left() === 0;
+    $('videoList').querySelectorAll('.vid').forEach(r => {
+      const j = +r.dataset.i, n = votes[j] || 0;
+      const dis = n >= CAP || exhausted;
+      r.querySelector('[data-a=inc]').disabled = dis;
+      r.querySelector('[data-a=max]').disabled = dis;
+    });
+  }
+
+  function renderList() {
+    const q = $('search').value.trim().toLowerCase();
+    let list = VIDEOS.filter(v => (!q || (v.t + ' ' + v.c).toLowerCase().includes(q)) && (!onlyMine || votes[v.i]));
+    const sort = $('sort').value;
+    if (sort === 'mine') list = list.slice().sort((a, b) => (votes[b.i] || 0) - (votes[a.i] || 0) || a.i - b.i);
+    if (sort === 'title') list = list.slice().sort((a, b) => a.t.localeCompare(b.t));
+    $('videoList').innerHTML = list.map(rowHtml).join('') || `<div class="card muted">Nothing matches.</div>`;
+  }
+
+  $('videoList').addEventListener('click', e => {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    const i = +b.closest('.vid').dataset.i, n = votes[i] || 0;
+    if (b.dataset.a === 'inc') setVote(i, n + 1);
+    if (b.dataset.a === 'dec') setVote(i, n - 1);
+    if (b.dataset.a === 'max') setVote(i, CAP);
+  });
+  $('search').addEventListener('input', renderList);
+  $('sort').addEventListener('change', renderList);
+  $('onlyMine').onclick = () => { onlyMine = !onlyMine; $('onlyMine').classList.toggle('on', onlyMine); renderList(); };
+  $('resetVotes').onclick = () => { if (confirm('Clear all your points?')) { votes = {}; store.set('votes', votes); updateBudget(); renderList(); $('ballotBox').classList.add('hidden'); } };
+
+  // ---------- ballot ----------
+  function ballotCode() {
+    const name = $('name').value.trim().replace(/[|,:\s]+/g, ' ').trim();
+    const parts = Object.keys(votes).map(Number).sort((a, b) => a - b).map(i => `${i}:${votes[i]}`);
+    return `${VER}|${name}|${parts.join(',')}`;
+  }
+  function shareLink(code) { return location.origin + location.pathname + '#b=' + encodeURIComponent(code); }
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch { const t = $('ballotText'); t.value = text; t.select(); try { return document.execCommand('copy'); } catch { return false; } }
+  }
+  function showBallot(copyWhat) {
+    const name = $('name').value.trim();
+    if (!name) { $('name').focus(); $('name').scrollIntoView({ behavior: 'smooth', block: 'center' }); setMsg('ballotMsg', 'Type your name first.', 'bad'); $('ballotBox').classList.remove('hidden'); return; }
+    const code = ballotCode();
+    $('ballotText').value = code;
+    $('ballotBox').classList.remove('hidden');
+    const l = left();
+    const text = copyWhat === 'link' ? shareLink(code) : code;
+    copy(text).then(ok => {
+      const what = copyWhat === 'link' ? 'Share link' : 'Ballot';
+      let m = ok ? `${what} copied. Paste it in the group chat.` : `Couldn't auto-copy. Select the code above and copy it.`;
+      if (l > 0) m += ` (You still have ${l} points unspent, that's allowed.)`;
+      setMsg('ballotMsg', m, ok ? 'ok' : 'warn');
+    });
+    $('ballotBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  $('copyBallot').onclick = () => showBallot('code');
+  $('copyAgain').onclick = () => showBallot('code');
+  $('copyLink').onclick = () => showBallot('link');
+
+  function setMsg(id, text, cls) { const el = $(id); el.textContent = text; el.className = 'msg ' + (cls || ''); }
+
+  // ---------- results ----------
+  let ballots = store.get('ballots', []);   // [{name, votes:{i:n}}]
+  const RX = /KV1\|([^|\n]{1,40}?)\|([0-9]+:[0-9]+(?:,[0-9]+:[0-9]+)*)/g;
+
+  function parseBallots(text) {
+    const found = [], errors = [];
+    for (const m of text.matchAll(RX)) {
+      const name = m[1].trim();
+      const v = {}; let total = 0, bad = null;
+      for (const p of m[2].split(',')) {
+        const [i, n] = p.split(':').map(Number);
+        if (!byIndex.has(i)) { bad = `unknown video #${i}`; break; }
+        if (n < 1 || n > CAP) { bad = `${n} points on one video (max ${CAP})`; break; }
+        v[i] = (v[i] || 0) + n; total += n;
+      }
+      if (!bad && total > BUDGET) bad = `${total} points spent (max ${BUDGET})`;
+      if (bad) errors.push(`${name}: rejected, ${bad}.`);
+      else found.push({ name, votes: v });
+    }
+    return { found, errors };
+  }
+
+  function addBallots(text) {
+    const { found, errors } = parseBallots(text);
+    let replaced = 0;
+    for (const b of found) {
+      const k = b.name.toLowerCase();
+      const idx = ballots.findIndex(x => x.name.toLowerCase() === k);
+      if (idx >= 0) { ballots[idx] = b; replaced++; } else ballots.push(b);
+    }
+    store.set('ballots', ballots);
+    const parts = [];
+    if (found.length) parts.push(`Added ${found.length} ballot${found.length === 1 ? '' : 's'}${replaced ? ` (${replaced} updated)` : ''}: ${found.map(b => b.name).join(', ')}.`);
+    if (!found.length && !errors.length) parts.push('No ballot codes found. They look like KV1|Name|3:10,17:8');
+    setMsg('pasteMsg', parts.concat(errors).join(' '), errors.length ? (found.length ? 'warn' : 'bad') : 'ok');
+    renderResults();
+  }
+  $('addBallots').onclick = () => { addBallots($('paste').value); $('paste').value = ''; };
+  $('clearBallots').onclick = () => { if (ballots.length && confirm('Remove all ballots?')) { ballots = []; store.set('ballots', ballots); setMsg('pasteMsg', '', ''); renderResults(); } };
+  $('voters').addEventListener('click', e => {
+    const b = e.target.closest('button[data-rm]'); if (!b) return;
+    ballots.splice(+b.dataset.rm, 1); store.set('ballots', ballots); renderResults();
+  });
+  $('cutoff').addEventListener('input', () => { store.set('cutoff', +$('cutoff').value); renderResults(); });
+  $('order').addEventListener('change', () => { store.set('order', $('order').value); renderResults(); });
+  $('cutoff').value = store.get('cutoff', 25);
+  $('order').value = store.get('order', 'ranked');
+
+  function tally() {
+    const rows = new Map(); // i -> {v, total, voters:[{name, n, color}], max, golden:[names]}
+    const row = i => { if (!rows.has(i)) rows.set(i, { v: byIndex.get(i), total: 0, voters: [], max: 0, golden: [] }); return rows.get(i); };
+    ballots.forEach((b, bi) => {
+      let best = null;
+      for (const [k, n] of Object.entries(b.votes)) {
+        const i = +k, r = row(i);
+        r.total += n; r.voters.push({ name: b.name, n, color: COLORS[bi % COLORS.length] }); r.max = Math.max(r.max, n);
+        if (!best || n > best.n || (n === best.n && i < best.i)) best = { i, n };
+      }
+      if (best) row(best.i).golden.push(b.name);
+    });
+    const score = (a, b) => b.total - a.total || b.voters.length - a.voters.length || b.max - a.max || a.v.i - b.v.i;
+    const all = [...rows.values()].sort(score);
+    const N = +$('cutoff').value;
+    const golden = all.filter(r => r.golden.length);
+    const rest = all.filter(r => !r.golden.length);
+    const selected = golden.concat(rest).slice(0, Math.max(N, golden.length)).sort(score);
+    const selSet = new Set(selected.map(r => r.v.i));
+    const out = all.filter(r => !selSet.has(r.v.i));
+    return { selected, out, N };
+  }
+
+  function resHtml(r, rank, cum, isOut) {
+    return `<div class="res${isOut ? ' out' : ''}">
+      <div class="rank">${rank}</div>
+      <a href="${watch(r.v.id)}" target="_blank" rel="noopener"><img loading="lazy" src="${thumb(r.v.id)}" alt=""></a>
+      <div>
+        <div class="t">${esc(r.v.t)}</div>
+        <div class="m">
+          ${r.golden.length ? `<span class="badge" title="Top pick of ${esc(r.golden.join(', '))}">★ ${esc(r.golden.join(', '))}</span>` : ''}
+          ${r.voters.map(x => `<span class="vd" title="${esc(x.name)}"><span class="dot" style="background:${x.color}"></span>${esc(x.name.split(' ')[0])} ${x.n}</span>`).join('')}
+          <span>${fmt(r.v.d)}${cum != null ? ` · ends ${fmtLong(cum)}` : ''}</span>
+        </div>
+      </div>
+      <div class="pts">${r.total}<small>pts</small></div>
+    </div>`;
+  }
+
+  function renderResults() {
+    $('voters').innerHTML = ballots.map((b, bi) => {
+      const s = Object.values(b.votes).reduce((a, c) => a + c, 0);
+      return `<span class="voter"><span class="dot" style="background:${COLORS[bi % COLORS.length]}"></span>${esc(b.name)} <b>${s}</b><button data-rm="${bi}" title="Remove">×</button></span>`;
+    }).join('');
+    $('cutoffLabel').textContent = $('cutoff').value;
+    const has = ballots.length > 0;
+    $('resultControls').classList.toggle('hidden', !has);
+    if (!has) { $('resultList').innerHTML = `<div class="card muted">No ballots yet. Paste the codes from the group chat above.</div>`; return; }
+
+    const { selected, out } = tally();
+    const order = $('order').value;
+    const play = order === 'buildup' ? selected.slice().reverse() : selected;
+    let cum = 0;
+    const total = selected.reduce((a, r) => a + r.v.d, 0);
+    $('runtime').textContent = `${selected.length} videos · ${fmtLong(total)} total`;
+    const rankOf = new Map(selected.map((r, k) => [r.v.i, k + 1]));
+    let html = play.map(r => { cum += r.v.d; return resHtml(r, rankOf.get(r.v.i), cum, false); }).join('');
+    if (out.length) html += `<div class="line">below the line (${out.length} more got points)</div>` + out.map((r, k) => resHtml(r, selected.length + k + 1, null, true)).join('');
+    $('resultList').innerHTML = html;
+    $('openQueue').onclick = () => {
+      const ids = play.slice(0, 50).map(r => r.v.id);
+      window.open('https://www.youtube.com/watch_videos?video_ids=' + ids.join(','), '_blank');
+    };
+    $('copyList').onclick = () => {
+      const text = play.map((r, k) => `${k + 1}. ${r.v.t} (${r.total} pts${r.golden.length ? ', ★ ' + r.golden.join(', ') : ''}) ${watch(r.v.id)}`).join('\n');
+      copy(text).then(ok => setMsg('resMsg', ok ? 'List copied.' : 'Could not copy.', ok ? 'ok' : 'bad'));
+    };
+  }
+
+  // ---------- boot ----------
+  updateBudget();
+  renderList();
+  function handleHash() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (h.get('b')) { showTab('results'); addBallots(h.get('b')); history.replaceState(null, '', location.pathname); }
+    else if (location.hash === '#results') showTab('results');
+  }
+  handleHash();
+  window.addEventListener('hashchange', handleHash);
+})();
+</script>
+</body>
+</html>
