@@ -4,183 +4,287 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kulture Night</title>
-<meta name="description" content="Vote on which music videos we watch. 100 points each, max 10 per video.">
+<meta name="description" content="Pick what we watch. 100 points each, max 10 per video.">
+<meta name="theme-color" content="#0B0B0C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f0f12; --panel: #17171c; --panel2: #202027; --line: #2b2b34;
-    --text: #f2f2f5; --muted: #9a9aa6; --accent: #ff4d6d; --accent2: #ffd166;
-    --ok: #4ade80; --warn: #fbbf24; --bad: #f87171;
+    --bg: #0B0B0C; --surface: #141416; --surface2: #1C1C20; --line: #1C1C20; --line2: #2A2A2F;
+    --text: #F4F4F2; --text2: #B4B4BA; --muted: #8A8A90; --faint: #808088;
+    --accent: #D4FF3D; --on-accent: #0B0B0C;
+    --ok: #7CF29C; --warn: #FFD166; --bad: #FF7A7A;
+    --display: 'Syne', system-ui, sans-serif; --body: 'Instrument Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); color: var(--text);
-    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 var(--body); -webkit-font-smoothing: antialiased; }
   a { color: inherit; }
   button, input, select, textarea { font: inherit; color: inherit; }
-  button { cursor: pointer; border: 1px solid var(--line); background: var(--panel2); border-radius: 10px; padding: 8px 12px; }
-  button:disabled { opacity: .4; cursor: default; }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-  button.ghost { background: transparent; }
-  input[type=text], input[type=search], textarea, select {
-    width: 100%; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; outline: none; }
-  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 80px; }
-  header { padding: 18px 0 8px; }
-  h1 { margin: 0; font-size: 26px; letter-spacing: -.02em; }
-  h1 span { color: var(--accent); }
-  .sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
-  .tabs { display: flex; gap: 6px; margin: 14px 0 10px; background: var(--panel); padding: 4px; border-radius: 12px; }
-  .tabs button { flex: 1; border: none; background: transparent; padding: 10px; border-radius: 9px; color: var(--muted); font-weight: 600; }
-  .tabs button.on { background: var(--panel2); color: var(--text); }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 10px 0; }
-  .row { display: flex; gap: 10px; align-items: center; }
-  .row > * { min-width: 0; }
-  .grow { flex: 1; }
-  .muted { color: var(--muted); }
-  .small { font-size: 13px; }
-  .sticky { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 8px 0; }
-  .budget { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
-  .budget .num { font-size: 26px; font-weight: 700; min-width: 60px; }
-  .bar { height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; flex: 1; }
-  .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .15s; }
-  .filters { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  .filters input { flex: 1 1 180px; }
-  .filters select { flex: 0 1 160px; width: auto; }
-  .chip { border-radius: 99px; padding: 8px 12px; font-size: 14px; white-space: nowrap; }
-  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .list { display: flex; flex-direction: column; gap: 8px; }
-  .vid { display: grid; grid-template-columns: 96px 1fr; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px; align-items: center; }
-  .vid.picked { border-color: var(--accent); }
-  .vid img { width: 96px; height: 54px; object-fit: cover; border-radius: 8px; background: #000; display: block; }
-  .vid .t { font-weight: 600; font-size: 15px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .vid .m { color: var(--muted); font-size: 13px; margin-top: 2px; }
-  .ctl { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-  .ctl button { padding: 6px 0; width: 40px; text-align: center; font-weight: 700; font-size: 18px; line-height: 1; }
-  .ctl .n { width: 34px; text-align: center; font-weight: 700; font-size: 18px; }
-  .ctl .n.on { color: var(--accent); }
-  .ctl .max { width: auto; font-size: 13px; font-weight: 600; padding: 7px 10px; }
-  textarea.code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; min-height: 70px; word-break: break-all; }
-  .msg { font-size: 14px; margin-top: 8px; min-height: 1.4em; }
+  button { cursor: pointer; background: none; border: 0; padding: 0; }
+  button:disabled { opacity: .3; cursor: default; }
+  input::placeholder, textarea::placeholder { color: #6E6E76; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px 120px; }
+  @media (min-width: 480px) { .wrap { padding: 0 24px 120px; } }
+
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .display { font-family: var(--display); font-weight: 800; letter-spacing: -.035em; line-height: .92; text-transform: uppercase; }
+  .num { font-family: var(--display); font-weight: 800; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+
+  /* top */
+  .top { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 0; gap: 12px; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; background: var(--surface); border-radius: 99px; }
+  .seg button { height: 36px; padding: 0 18px; border-radius: 99px; font-size: 13px; font-weight: 600; color: var(--muted); transition: background .18s, color .18s; }
+  .seg button.on { background: var(--text); color: var(--bg); }
+
+  /* hero */
+  .hero { padding: 30px 0 0; display: flex; flex-direction: column; gap: 16px; }
+  .hero h1 { margin: 0; font-size: clamp(40px, 12.5vw, 76px); }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text2); max-width: 380px; }
+
+  .field { padding: 26px 0 0; display: flex; flex-direction: column; gap: 8px; }
+  .field input { width: 100%; height: 52px; background: transparent; border: 0; border-bottom: 1px solid var(--line2); border-radius: 0; outline: 0; font-family: var(--display); font-weight: 700; font-size: 24px; color: var(--text); transition: border-color .18s; }
+  .field input:focus { border-color: var(--accent); }
+
+  /* budget */
+  .budget { margin-top: 26px; padding: 18px 20px 20px; background: var(--surface); border-radius: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .budget .row { display: flex; align-items: flex-end; justify-content: space-between; }
+  .budget .big { font-size: 64px; color: var(--accent); transition: color .2s; }
+  .budget .big.done { color: var(--ok); }
+  .meter { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; height: 8px; }
+  .meter i { display: block; border-radius: 99px; background: var(--line2); transition: background .18s; }
+  .meter i.full { background: var(--accent); } .meter i.half { background: color-mix(in srgb, var(--accent) 50%, transparent); }
+  .btn { height: 56px; padding: 0 22px; border-radius: 99px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: .02em; text-transform: uppercase; text-decoration: none; transition: transform .12s, opacity .18s; white-space: nowrap; }
+  .btn:active { transform: scale(.97); }
+  .btn.accent { background: var(--accent); color: var(--on-accent); }
+  .btn.ghost { border: 1px solid var(--line2); color: var(--text); font-family: var(--body); font-weight: 600; text-transform: none; letter-spacing: 0; font-size: 14px; height: 48px; }
+  .btn svg { flex-shrink: 0; }
+
+  /* compact sticky bar */
+  .stickybar { position: sticky; top: 0; z-index: 10; margin: 0 -20px; padding: 10px 20px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 14px; opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity .2s, transform .2s; }
+  .stickybar.show { opacity: 1; pointer-events: auto; transform: none; }
+  .stickybar .num { font-size: 30px; color: var(--accent); min-width: 44px; }
+  .stickybar .meter { flex: 1; height: 6px; }
+  .stickybar .btn { height: 42px; padding: 0 16px; font-size: 13px; }
+  @media (min-width: 480px) { .stickybar { margin: 0 -24px; padding: 10px 24px; } }
+
+  .panel { margin-top: 14px; padding: 16px; background: var(--surface); border-radius: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .code { width: 100%; min-height: 64px; resize: none; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line2); border-radius: 12px; color: var(--text); font-family: var(--mono); font-size: 12px; outline: 0; word-break: break-all; }
+  .code:focus { border-color: var(--accent); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .actions > * { flex: 1 1 140px; }
+  .msg { font-size: 13px; min-height: 1.2em; color: var(--muted); }
   .msg.ok { color: var(--ok); } .msg.warn { color: var(--warn); } .msg.bad { color: var(--bad); }
-  .voters { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
-  .voter { display: inline-flex; align-items: center; gap: 8px; background: var(--panel2); border: 1px solid var(--line); border-radius: 99px; padding: 6px 8px 6px 12px; font-size: 14px; }
-  .voter b { color: var(--accent2); }
-  .voter button { padding: 2px 8px; border-radius: 99px; font-size: 13px; }
-  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 99px; margin-right: 4px; vertical-align: middle; }
-  .res { display: grid; grid-template-columns: 34px 64px 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
-  .res.out { opacity: .55; }
-  .res .rank { font-weight: 800; font-size: 18px; color: var(--muted); text-align: center; }
-  .res img { width: 64px; height: 36px; object-fit: cover; border-radius: 6px; background: #000; display: block; }
-  .res .t { font-weight: 600; font-size: 14px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .res .m { color: var(--muted); font-size: 12px; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .res .pts { font-weight: 800; font-size: 20px; text-align: right; }
-  .res .pts small { display: block; font-weight: 500; font-size: 11px; color: var(--muted); }
-  .badge { background: var(--accent2); color: #000; border-radius: 6px; padding: 1px 6px; font-size: 11px; font-weight: 700; }
-  .vd { display: inline-flex; align-items: center; gap: 2px; background: var(--panel2); border-radius: 6px; padding: 1px 6px; font-size: 11px; }
-  .line { text-align: center; color: var(--muted); font-size: 13px; margin: 14px 0 8px; border-top: 2px dashed var(--line); padding-top: 8px; }
-  .range { display: flex; align-items: center; gap: 10px; }
-  .range input { flex: 1; accent-color: var(--accent); }
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  .actions button { flex: 1 1 160px; }
+
+  /* filters */
+  .filters { padding: 22px 0 0; display: flex; gap: 8px; align-items: center; }
+  .search { flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border: 1px solid var(--line2); border-radius: 99px; min-width: 0; }
+  .search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font-size: 14px; }
+  .search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+  .chip { height: 44px; padding: 0 14px; border: 1px solid var(--line2); border-radius: 99px; font-size: 13px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; transition: background .18s, color .18s, border-color .18s; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .chip .mono { font-family: var(--mono); font-size: 11px; opacity: .8; }
+  .sortwrap { position: relative; height: 44px; width: 44px; flex-shrink: 0; border: 1px solid var(--line2); border-radius: 99px; display: flex; align-items: center; justify-content: center; }
+  .sortwrap select { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+
+  /* vote list */
+  .list { margin-top: 18px; display: flex; flex-direction: column; border-bottom: 1px solid var(--line); }
+  .vid { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); animation: rise .35s both; }
+  @media (min-width: 480px) { .vid { grid-template-columns: 128px minmax(0, 1fr); gap: 14px; } .vid img { width: 128px; height: 72px; } }
+  .vid .body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .vid .bot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .vid .idx { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-right: 4px; }
+  .vid a.th { display: block; border-radius: 8px; overflow: hidden; outline: 2px solid transparent; transition: outline-color .18s; line-height: 0; }
+  .vid.picked a.th { outline-color: var(--accent); }
+  .vid img { width: 96px; height: 54px; object-fit: cover; display: block; background: #000; }
+  .vid .t { font-size: 14px; font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .vid .m { font-size: 12px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .step { display: flex; align-items: center; background: var(--surface); border-radius: 99px; padding: 3px; }
+  .step button { width: 34px; height: 34px; border-radius: 99px; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center; color: var(--text); transition: background .12s; }
+  .step button:not(:disabled):active { background: var(--surface2); }
+  .step .n { width: 24px; text-align: center; font-family: var(--display); font-weight: 800; font-size: 16px; color: var(--faint); transition: color .18s; }
+  .step .n.on { color: var(--accent); }
+  .footline { display: flex; justify-content: space-between; gap: 12px; padding: 14px 0 0; }
+  .empty { padding: 32px 0; color: var(--muted); text-align: center; }
+
+  /* results */
+  .voters { display: flex; flex-wrap: wrap; gap: 6px; }
+  .voter { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 6px 0 10px; border: 1px solid var(--line2); border-radius: 99px; font-size: 13px; font-weight: 600; }
+  .voter .mono { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .voter button { width: 22px; height: 22px; border-radius: 99px; color: var(--muted); font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .voter button:hover { background: var(--surface2); color: var(--text); }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+  .cards { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cardx { padding: 14px 16px; background: var(--surface); border-radius: 16px; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+  .cardx .big { font-size: 30px; }
+  .cardx input[type=range] { width: 100%; margin: 4px 0 0; accent-color: var(--accent); height: 20px; }
+  .segw { margin-top: 8px; }
+  .segw .seg { width: 100%; }
+  .upnext { margin-top: 16px; padding: 16px; background: var(--surface); border-radius: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .upnext a.big { display: block; border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 9; background: #000; line-height: 0; }
+  .upnext img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .upnext .r { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .upnext h2 { margin: 0; font-size: clamp(22px, 6vw, 34px); overflow-wrap: anywhere; }
+  .upnext .sub { color: var(--text2); font-size: 14px; margin-top: 6px; }
+  .upnext .pts { font-size: 56px; color: var(--accent); flex-shrink: 0; }
+  .upnext .pts small { display: block; font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-align: right; }
+  .res { display: grid; grid-template-columns: 46px 72px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); animation: rise .35s both; }
+  .res.out { opacity: .45; }
+  .res .rank { font-family: var(--display); font-weight: 800; font-size: 24px; letter-spacing: -.06em; color: var(--faint); }
+  .res.first .rank { color: var(--accent); }
+  .res a.th { display: block; border-radius: 6px; overflow: hidden; line-height: 0; }
+  .res img { width: 72px; height: 40px; object-fit: cover; display: block; background: #000; }
+  .res .t { font-size: 14px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res .m { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 5px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .gold { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px; border-radius: 99px; background: var(--accent); color: var(--on-accent); font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+  .vd { display: inline-flex; align-items: center; gap: 4px; }
+  .vd .dot { width: 6px; height: 6px; }
+  .res .pts { font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -.02em; text-align: right; }
+  .line { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  .line i { flex: 1; border-top: 1px dashed var(--line2); }
+  @media (max-width: 400px) { .res { grid-template-columns: 44px minmax(0, 1fr) auto; } .res a.th { display: none; } }
+
+  .bottombar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 10px 20px calc(10px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); transform: translateY(110%); transition: transform .25s; }
+  .bottombar.show { transform: none; }
+  .bottombar .in { max-width: 720px; margin: 0 auto; display: flex; gap: 8px; }
+  .bottombar .btn { flex: 1; height: 50px; font-size: 13px; padding: 0 14px; min-width: 0; }
+  .bottombar .btn.ghost { flex: 0 0 auto; height: 50px; padding: 0 16px; }
+
   .hidden { display: none !important; }
-  .rules { font-size: 14px; color: var(--muted); }
-  .rules b { color: var(--text); }
-  @media (max-width: 420px) { .res { grid-template-columns: 28px 1fr auto; } .res > a { display: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>Kulture <span>Night</span></h1>
-    <div class="sub" id="subtitle">Pick what we watch.</div>
+  <header class="top">
+    <span class="eyebrow" style="white-space:nowrap">Kulture Night</span>
+    <nav class="seg" aria-label="Section">
+      <button id="tabVote" class="on">Vote</button>
+      <button id="tabResults">Results</button>
+    </nav>
   </header>
-
-  <div class="tabs">
-    <button id="tabVote" class="on">Vote</button>
-    <button id="tabResults">Results</button>
-  </div>
 
   <!-- ===================== VOTE ===================== -->
   <section id="vote">
-    <div class="card rules">
-      You have <b>100 points</b>. Put up to <b>10 on any one video</b>. Spread them across the ones you most want to see on the big screen.
-      Your single highest pick is guaranteed a slot. When you're done, tap <b>Copy ballot</b> and paste it in the group chat.
+    <div class="hero">
+      <h1 class="display">Pick<br>what we<br><em>watch.</em></h1>
+      <p id="intro">You have <b>100 points</b>. Put up to <b>10 on any one video</b>. Your single top pick is locked in no matter what. When you're done, copy your ballot and paste it in the group chat.</p>
     </div>
 
-    <div class="card">
-      <label class="small muted" for="name">Your name</label>
-      <input type="text" id="name" placeholder="e.g. Obinna" maxlength="24" autocomplete="off">
+    <div class="field">
+      <label class="eyebrow" for="name">Your name</label>
+      <input type="text" id="name" placeholder="Type it like you'd say it" maxlength="24" autocomplete="off">
     </div>
 
-    <div class="sticky">
-      <div class="budget">
-        <div><div class="small muted">Points left</div><div class="num" id="left">100</div></div>
-        <div class="bar"><i id="barFill"></i></div>
-        <button class="primary" id="copyBallot">Copy ballot</button>
+    <div class="budget" id="budgetBlock">
+      <div class="row">
+        <div>
+          <div class="eyebrow">Points left</div>
+          <div class="num big" id="left">100</div>
+        </div>
+        <div style="text-align:right">
+          <div class="eyebrow">Picks</div>
+          <div class="num" id="pickCount" style="font-size:28px">0</div>
+        </div>
       </div>
+      <div class="meter" id="meter"></div>
+      <button class="btn accent" id="copyBallot">Copy ballot
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg>
+      </button>
     </div>
 
-    <div class="card hidden" id="ballotBox">
-      <div class="small muted">Your ballot code. Paste this in the group chat (or send the link).</div>
-      <textarea class="code" id="ballotText" readonly></textarea>
+    <div class="stickybar" id="stickybar">
+      <div class="num" id="leftMini">100</div>
+      <div class="meter" id="meterMini"></div>
+      <button class="btn accent" id="copyBallotMini">Copy ballot</button>
+    </div>
+
+    <div class="panel hidden" id="ballotBox">
+      <div class="eyebrow">Your ballot code. Paste it in the group chat, or send the link.</div>
+      <textarea class="code" id="ballotText" readonly rows="2"></textarea>
       <div class="actions">
-        <button id="copyAgain">Copy code</button>
-        <button id="copyLink">Copy share link</button>
+        <button class="btn ghost" id="copyAgain">Copy code</button>
+        <button class="btn ghost" id="copyLink">Copy share link</button>
       </div>
       <div class="msg" id="ballotMsg"></div>
     </div>
 
     <div class="filters">
-      <input type="search" id="search" placeholder="Search artist or title">
-      <button class="chip" id="onlyMine">My picks <span id="pickCount">0</span></button>
-      <select id="sort">
-        <option value="playlist">Playlist order</option>
-        <option value="mine">My points</option>
-        <option value="title">A to Z</option>
-      </select>
+      <label class="search">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8A90" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" id="search" placeholder="Artist or title" aria-label="Search">
+      </label>
+      <button class="chip" id="onlyMine">My picks <span class="mono" id="pickCount2">0</span></button>
+      <div class="sortwrap" title="Sort">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16"/><path d="M7 12h10"/><path d="M10 17h4"/></svg>
+        <select id="sort" aria-label="Sort">
+          <option value="playlist">Playlist order</option>
+          <option value="mine">My points first</option>
+          <option value="title">A to Z</option>
+        </select>
+      </div>
     </div>
 
     <div class="list" id="videoList"></div>
 
-    <div class="actions">
-      <button class="ghost" id="resetVotes">Reset my votes</button>
-    </div>
+    <div class="footline eyebrow"><span id="countLine"></span><span>Tap art to preview · tap a number to max it</span></div>
+    <div class="actions" style="margin-top:18px"><button class="btn ghost" id="resetVotes">Reset my votes</button></div>
   </section>
 
   <!-- ===================== RESULTS ===================== -->
   <section id="results" class="hidden">
-    <div class="card">
-      <div class="small muted">Paste the group chat here. Ballot codes are picked out automatically, everything else is ignored.</div>
-      <textarea class="code" id="paste" placeholder="KV1|Name|3:10,17:8,..."></textarea>
+    <div class="hero">
+      <h1 class="display">The<br><em>set list.</em></h1>
+      <p id="summary">Paste the ballots from the group chat. Golden picks lock in first, the rest rank by points.</p>
+    </div>
+
+    <div class="panel">
+      <label class="eyebrow" for="paste">Paste the group chat</label>
+      <textarea class="code" id="paste" rows="3" placeholder="KV1|Name|22:10,43:10,48:7 … codes are picked out, everything else is ignored"></textarea>
       <div class="actions">
-        <button class="primary" id="addBallots">Add ballots</button>
-        <button class="ghost" id="clearBallots">Clear all</button>
+        <button class="btn accent" id="addBallots" style="height:46px;font-size:13px">Add ballots</button>
+        <button class="btn ghost" id="clearBallots" style="height:46px;flex:0 0 auto">Clear</button>
       </div>
       <div class="msg" id="pasteMsg"></div>
       <div class="voters" id="voters"></div>
     </div>
 
-    <div class="card" id="resultControls">
-      <div class="range">
-        <span class="small muted">Watch</span>
-        <input type="range" id="cutoff" min="10" max="40" step="1" value="25">
-        <b id="cutoffLabel">25</b>
+    <div id="resultControls" class="hidden">
+      <div class="cards">
+        <div class="cardx">
+          <span class="eyebrow">Watch</span>
+          <span class="num big" id="cutoffLabel">25</span>
+          <input type="range" id="cutoff" min="10" max="40" step="1" value="25" aria-label="How many videos to watch">
+        </div>
+        <div class="cardx">
+          <span class="eyebrow">Runtime</span>
+          <span class="num big" id="runtime">0m</span>
+          <span class="msg" id="runtimeSub"></span>
+        </div>
       </div>
-      <div class="row" style="margin-top:8px">
-        <div class="grow small muted" id="runtime"></div>
-        <select id="order" style="width:auto">
-          <option value="ranked">Ranked order</option>
-          <option value="buildup">Save the best for last</option>
-        </select>
-      </div>
-      <div class="actions">
-        <button class="primary" id="openQueue">Open as YouTube queue</button>
-        <button id="copyList">Copy list</button>
-      </div>
-      <div class="msg" id="resMsg"></div>
+      <div class="segw"><div class="seg" role="group" aria-label="Play order">
+        <button id="ordRanked" class="on">Ranked</button>
+        <button id="ordBuild">Best for last</button>
+      </div></div>
+      <div class="upnext" id="upnext"></div>
     </div>
 
     <div class="list" id="resultList"></div>
+    <div class="msg" id="resMsg" style="margin-top:10px"></div>
   </section>
+</div>
+
+<div class="bottombar" id="bottombar">
+  <div class="in">
+    <button class="btn accent" id="openQueue">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <span>YouTube queue</span>
+    </button>
+    <button class="btn ghost" id="copyList">Copy list</button>
+  </div>
 </div>
 
 <!--VIDEOS:START--><script id="videos" type="application/json">{"title":"Kulture","url":"https://www.youtube.com/playlist?list=PLZo9Bl-J-gqQ2Xyf1IMfnk-GZc2Y7zi4P","videos":[{"i":0,"id":"toKJP3luQbI","t":"Paramore - Running Out Of Time [OFFICIAL VIDEO]","c":"Paramore","d":216},{"i":1,"id":"b53QJYP-lqY","t":"Troye Sivan - Rush (Official Video)","c":"Troye Sivan","d":223},{"i":2,"id":"VuJ8sawin4k","t":"Tiwa Savage - Mobo Awards Performance","c":"Tiwa Savage","d":198},{"i":3,"id":"ArmDp-zijuc","t":"NewJeans (뉴진스) 'Super Shy' Official MV","c":"HYBE LABELS","d":201},{"i":4,"id":"3sni1ckbBqw","t":"Rebecca Black covers Addison Rae’s ‘Fame is a Gun’ for Like A Version","c":"triple j","d":232},{"i":5,"id":"Yvl4QSAyWR4","t":"Troye Sivan - Party (Official Music Video)","c":"Troye Sivan","d":245},{"i":6,"id":"fYaF00OZ69U","t":"Troye Sivan - FF (Official Music Video)","c":"Troye Sivan","d":292},{"i":7,"id":"mFA1P8ZzoLw","t":"Troye Sivan - She’s the Best (Official Music Video)","c":"Troye Sivan","d":271},{"i":8,"id":"x6_mbnsh6VU","t":"GENER8ION - STORM starring Yung Lean","c":"GENER8ION","d":455},{"i":9,"id":"rwlFWWGaZ5Y","t":"Tate McRae - Revolving door (Official Video)","c":"Tate McRae","d":235},{"i":10,"id":"g_4zfariPCY","t":"Doja Cat - Wet Vagina (Live at Coachella 2024)","c":"Doja Cat","d":348},{"i":11,"id":"qooWnw5rEcI","t":"Mitski - Nobody (Official Video)","c":"Mitski","d":204},{"i":12,"id":"3sB4Iv_tM7U","t":"ADÉLA - Nicole Kidman","c":"ADÉLA","d":222},{"i":13,"id":"gBRi6aZJGj4","t":"Billie Eilish - Bellyache (Official Music Video)","c":"Billie Eilish","d":211},{"i":14,"id":"REPPgPcw4hk","t":"CDK - Somebody That I Used To Know by Gotye","c":"Sergio Reis","d":231},{"i":15,"id":"9l54Rm8evbk","t":"CDK - Bittersuite by Billie Eilish","c":"Sergio Reis","d":167},{"i":16,"id":"g_l-ps0Hrv4","t":"Get loose. Now live.","c":"Gap","d":90},{"i":17,"id":"IwzF26o0AuU","t":"Better in Denim.","c":"Gap","d":91},{"i":18,"id":"8unVMB-LoT8","t":"GAP x Jungle - Linen Moves Campaign (feat. Tyla)","c":"Jungle4eva","d":80},{"i":19,"id":"6eQ6NWuFaCk","t":"Denim on your own.","c":"Gap","d":109},{"i":20,"id":"YRGtgkN-8QU","t":"Roommates - Malcolm Todd (Music Video)","c":"Malcolm Todd","d":246},{"i":21,"id":"qRAJowgHqxA","t":"PinkPantheress - Girl Like Me (Official Video)","c":"Pinkpantheress","d":157},{"i":22,"id":"WDZJPJV__bQ","t":"Beyoncé - Formation (Official Video)","c":"Beyoncé","d":288},{"i":23,"id":"2vjPBrBU-TM","t":"Sia - Chandelier (Official Video)","c":"Sia","d":232},{"i":24,"id":"KWZGAExj-es","t":"Sia - Elastic Heart feat. Shia LaBeouf & Maddie Ziegler (Official Video)","c":"Sia","d":308},{"i":25,"id":"Gj5L9SYhoSE","t":"MARINA AND THE DIAMONDS - PRIMADONNA [Official Music Video] | ♡ ELECTRA HEART PART 4/11 ♡","c":"MARINA","d":239},{"i":26,"id":"vKNcuTWzTVw","t":"MARINA AND THE DIAMONDS - HOW TO BE A HEARTBREAKER [Official Music Video] | ♡ ELECTRA HEART PART 7 ♡","c":"MARINA","d":236},{"i":27,"id":"gDr7aTfBffU","t":"MARINA AND THE DIAMONDS - Blue [Official Music Video]","c":"MARINA","d":232},{"i":28,"id":"WZzcY7ASQno","t":"MARINA AND THE DIAMONDS - Froot [Official Music Video]","c":"MARINA","d":253},{"i":29,"id":"oiKj0Z_Xnjc","t":"Stromae - papaoutai (Official Video)","c":"Stromae","d":233},{"i":30,"id":"0UPDBODtxzw","t":"Tame Impala - Dracula (JENNIE Remix - Official Lyric Video) ft. JENNIE","c":"Tame Impala","d":211},{"i":31,"id":"XFR7v5ix5hU","t":"Madison Beer - make you mine (Official Music Video)","c":"Madison Beer","d":256},{"i":32,"id":"elNce4ixLmE","t":"Hootie Frutti (Choreography Ver.) | KATSEYE","c":"KATSEYE","d":146},{"i":33,"id":"R2-yomhYAj4","t":"KATSEYE (캣츠아이) \"Gnarly\" Official MV","c":"HYBE LABELS","d":142},{"i":34,"id":"lSD_L-xic9o","t":"Laufey - From The Start (Official Music Video)","c":"Laufey","d":170},{"i":35,"id":"obLSGG-oEyw","t":"Laufey - Lover Girl (Official Music Video)","c":"Laufey","d":170},{"i":36,"id":"yNa8jP4zoJo","t":"Laufey - Madwoman (Official Music Video)","c":"Laufey","d":285},{"i":37,"id":"wQtVSNmYCNg","t":"WILLOW - symptom of life","c":"willowsmith","d":230},{"i":38,"id":"DgMxLPnwZgc","t":"Devon Again - cherry cola (official music video)","c":"Devon Again","d":332},{"i":39,"id":"00_7tc6-e54","t":"Devon Again - Suburbia (Official Video)","c":"Devon Again","d":180},{"i":40,"id":"t3jBDhnhS8U","t":"Slayyyter - GAS STATION (Official Video)","c":"slayyyter","d":218},{"i":41,"id":"q3lX2p_Uy9I","t":"Jungle - Back On 74 (Official Video)","c":"Jungle4eva","d":241},{"i":42,"id":"fkmFWfM9sjQ","t":"Jungle - Where Are You Now? (Official Video)","c":"Jungle4eva","d":236},{"i":43,"id":"WJW-VvmRKsE","t":"Charli xcx - 360 (official video)","c":"Charli xcx","d":265},{"i":44,"id":"FSCI9oW5XXI","t":"Reneé Rapp - Snow Angel (Live From Saturday Night Live/2024)","c":"Reneé Rapp","d":240},{"i":45,"id":"0c66ksfigtU","t":"Doja Cat - Agora Hills (Official Video)","c":"Doja Cat","d":311},{"i":46,"id":"i3Jv9fNPjgk","t":"AZEALIA BANKS - 212 FT. LAZY JAY","c":"Azealia Banks","d":206},{"i":47,"id":"EaVL5HIaiNg","t":"BOMBS | Swamp Sessions","c":"Doechii","d":95},{"i":48,"id":"F0cdbR5ognY","t":"Doechii - DENIAL IS A RIVER","c":"Doechii","d":165},{"i":49,"id":"88wHgiUAKoI","t":"Fujii Kaze - Workin’ Hard（Official Video）","c":"Fujii Kaze","d":262},{"i":50,"id":"9YqlmvpWLUg","t":"Aitana, Nicki Nicole - Formentera (video oficial)","c":"Aitana","d":212},{"i":51,"id":"C_yI2959DYU","t":"Doja Cat - Tia Tamera (Official Video) ft. Rico Nasty","c":"Doja Cat","d":234},{"i":52,"id":"yxW5yuzVi8w","t":"Doja Cat - Woman (Official Video)","c":"Doja Cat","d":193},{"i":53,"id":"djV11Xbc914","t":"a-ha - Take On Me (Official Video) [4K]","c":"a-ha","d":244},{"i":54,"id":"vBynw9Isr28","t":"Lady Gaga - Abracadabra (Official Music Video)","c":"Lady Gaga","d":270},{"i":55,"id":"TO2c06p6m5w","t":"Rina Sawayama - XS (Official Video)","c":"Rina Sawayama","d":219},{"i":56,"id":"Vg8a7YpMa24","t":"Jordan Firstman - I Wanna See My Friends Dicks","c":"Jordan Firstman","d":147},{"i":57,"id":"0R3dy3EfM3o","t":"Jordan Firstman - I’m quitting my job tomorri (Official Video)","c":"Jordan Firstman","d":157},{"i":58,"id":"KdJ-Qwu3y4Y","t":"Victoria Monét - On My Mama (Official Video)","c":"Victoria Monét","d":217},{"i":59,"id":"Dh-ULbQmmF8","t":"Ciara - Level Up","c":"Ciara","d":212},{"i":60,"id":"H58vbez_m4E","t":"Kendrick Lamar - Not Like Us","c":"Kendrick Lamar","d":355},{"i":61,"id":"FKXSh14svlQ","t":"Normani - Motivation (Official Video)","c":"Normani","d":238},{"i":62,"id":"4MHRh0vJpEs","t":"Todrick Hall - FAG (Official Music Video)","c":"todrickhall","d":188},{"i":63,"id":"GKSRyLdjsPA","t":"Sia - The Greatest (Official Video)","c":"Sia","d":352},{"i":64,"id":"TdmWJZEbJBU","t":"ANIMA - Thom Yorke - Paul Thomas Anderson - (FT. Netflix playback glitch)","c":"Luke Coutts","d":327},{"i":65,"id":"VYOjWnS4cMY","t":"Childish Gambino - This Is America (Official Video)","c":"Donald Glover","d":245},{"i":66,"id":"5CvwgC-WQlo","t":"Dytto | FRONTROW | World of Dance Bay Area 2015 #WODBAY2015","c":"Official World of Dance","d":302},{"i":67,"id":"Xw6k6Ma0oqo","t":"Royal Family  | FRONTROW | World of Dance Los Angeles 2015 | #WODLA15","c":"Official World of Dance","d":618},{"i":68,"id":"wIgmyE5Juzw","t":"Wallows - Are You Bored Yet? (feat. Clairo) [Official Video]","c":"Wallows","d":207},{"i":69,"id":"GNz9z5gDTjU","t":"Stromae - Mauvaise journée","c":"ZAS VIDEO","d":108},{"i":70,"id":"yJtckcMHM2g","t":"Madonna - \"Confessions II - The Film\"","c":"Madonna","d":835},{"i":71,"id":"pZ12_E5R3qc","t":"Beyoncé - Partition (Explicit Video)","c":"Beyoncé","d":230},{"i":72,"id":"rCHYHx68VcE","t":"Safety Trance - El Alma Que Te Trajo ft. Arca","c":"Boysnoize Records","d":145},{"i":73,"id":"NL-tvd8jeBc","t":"Arca - Prada/Rakata","c":"Arca","d":311},{"i":74,"id":"ykY6st2vw8A","t":"Rakata","c":"Arca","d":152},{"i":75,"id":"cwZ1L_0QLjw","t":"Charli xcx - Von dutch (official video)","c":"Charli xcx","d":214},{"i":76,"id":"zxs0N9_94Zs","t":"ADÉLA - KGB (Official Music Video)","c":"ADÉLA","d":216},{"i":77,"id":"oCvdBnRj67k","t":"ADÉLA - SexOnTheBeat","c":"ADÉLA","d":204},{"i":78,"id":"FyS5dAywkEo","t":"LISA - SaWaDiKa (Official Music Video)","c":"LLOUD Official","d":187},{"i":79,"id":"woLfAvD5iXI","t":"Chappell Roan - The Subway (Official Music Video)","c":"Chappell Roan","d":272},{"i":80,"id":"ePsqyPMIg6I","t":"Chappell Roan - My Kink is Karma (Official Music Video)","c":"Chappell Roan","d":233},{"i":81,"id":"eoi_hd-eils","t":"BORN FROM CULTURE | Georgia","c":"Born From Culture","d":83},{"i":82,"id":"drgj8C2uLAU","t":"NOSEBLEEDS - Dance Visual [4K]","c":"Late Childhood","d":170},{"i":83,"id":"kPnN4IE_a98","t":"GENER8ION feat. Yung Lean Perform \"STORM\" | 2026 VMAs","c":"MTV","d":205},{"i":84,"id":"pHMH408ltEM","t":"ATARASHII GAKKO! - Tokyo Calling (Official Music Video)","c":"88rising","d":207},{"i":85,"id":"SEAkeAn_C1E","t":"Mei Semones - Howl (Official Music Video)","c":"Mei Semones","d":188},{"i":86,"id":"1At_soYSgXo","t":"FLO - Leak It | NARA Choreography","c":"1MILLION Dance Studio","d":129},{"i":87,"id":"fB0inmQHXJU","t":"AMAARAE - ANGELS IN TIBET | RUDI SMIT & UNTIMITIVE DANCE COMPANY","c":"RUDI SMIT","d":172},{"i":88,"id":"dpd0L9IGJeo","t":"CDK - Bohemian Rhapsody by Queen","c":"Sergio Reis","d":243},{"i":89,"id":"LYsb1B80kcc","t":"i hate the way i look today.","c":"Tuan Malinowski","d":48},{"i":90,"id":"iGbeZNqklic","t":"Doechii - NISSAN ALTIMA","c":"Doechii","d":130},{"i":91,"id":"kbMqWXnpXcA","t":"THE CARTERS - APESHIT (Official Video)","c":"Beyoncé","d":365},{"i":92,"id":"itqQS_gpNHM","t":"Kenzo World - Spike Jonze","c":"CollideTV","d":236},{"i":93,"id":"esqRBsVumrw","t":"Jungle - Candle Flame (feat. Erick The Architect) (Official Video)","c":"Jungle4eva","d":234},{"i":94,"id":"dDuKs6NTFDs","t":"Jungle - Don't Play feat. Mood Talk (Official Video)","c":"Jungle4eva","d":253},{"i":95,"id":"lrd5aiw-gv4","t":"Jungle - Move Like You Do (Official Video)","c":"Jungle4eva","d":278},{"i":96,"id":"DW1vUkqNvqQ","t":"Jungle - The Wave (Official Video)","c":"Jungle4eva","d":224},{"i":97,"id":"0aQ9Q0hRTwY","t":"Doechii - Crazy (Official Video)","c":"Doechii","d":193},{"i":98,"id":"KOOhPfMbuIQ","t":"half•alive - still feel. [OFFICIAL VIDEO]","c":"half•alive","d":256},{"i":99,"id":"a9HIaGcBocc","t":"Chloe x Halle - Do It (Official Video)","c":"Chloe x Halle","d":183},{"i":100,"id":"Ob5XQ7oZxxg","t":"Jungle - Come Back To Me (Official Video)","c":"Jungle4eva","d":286},{"i":101,"id":"s3a4OQR-10M","t":"Tame Impala - Loser (Official Video)","c":"Tame Impala","d":268},{"i":102,"id":"e-ORhEE9VVg","t":"Taylor Swift - Blank Space","c":"Taylor Swift","d":273},{"i":103,"id":"w77nJ6BBEhc","t":"Rone - Room With A View (Official Music Video)","c":"Rone","d":274},{"i":104,"id":"9T51n3tvZ3M","t":"Tierra Whack – Unemployed [Official Music Video]","c":"Tierra Whack","d":176},{"i":105,"id":"EOTebhPy04g","t":"Tierra Whack - Whack World","c":"Tierra Whack","d":948},{"i":106,"id":"6-hUzf6sbiw","t":"Rachel Zegler Performs Addison Rae's \"Fame is a Gun\" | Las Culturistas Culture Awards 2026 | Bravo","c":"Bravo","d":224},{"i":107,"id":"c-iv6m0YqGY","t":"Ben Platt - Diet Pepsi (Live) ","c":"Miley's Reborn","d":130},{"i":108,"id":"mPRy1B4t5YA","t":"Charli XCX - Boys [Official Video]","c":"Charli xcx","d":168},{"i":109,"id":"xUF986Rq_68","t":"Malcolm Todd – ‘I Saw Your Face’ (live for Like A Version)","c":"triple j","d":197},{"i":110,"id":"YykjpeuMNEk","t":"Coldplay - Hymn For The Weekend (Official Video)","c":"Coldplay","d":261},{"i":111,"id":"IqzfU9T-UEM","t":"4Me 4Me - Malcolm Todd (Music Video)","c":"Malcolm Todd","d":215},{"i":112,"id":"eDPFVKGXFo8","t":"Aya sato workshop  2014 5 4","c":"IZUMI COMPANY","d":111},{"i":113,"id":"oWhBjfil1wA","t":"Tinashe | \"Nasty\" Millennium Dance Complex Drop-In Class (Choreography by Jojo Gomez)","c":"Tinashe","d":140},{"i":114,"id":"Zpmi3nYXveU","t":"Hoy & Sexy  - Zara Larsson /Choreography by Kiel Tutin","c":"Millennium Dance Complex Los Angeles","d":265},{"i":115,"id":"ugcBgcqFPVc","t":"UNHOLY Sam Smith ft Kim Petras - MICHAEL DAMESKI","c":"Michael Dameski","d":84},{"i":116,"id":"IYlx1_g5Pbg","t":"Mr. Incorrect - Malcolm Todd (Music Video)","c":"Malcolm Todd","d":228},{"i":117,"id":"aBMGvHHkr9Y","t":"Yebba: Tiny Desk (Home) Concert","c":"NPR Music","d":1148},{"i":118,"id":"64_mIv-M6Zc","t":"GIRLS - The Kid LAROI | Wren Crisologo Choreography | GEEKOUT Japan Dance Camp","c":"Wren Crisologo","d":134},{"i":119,"id":"QeIuOx6swvs","t":"Jamaica Moana - 'Tuggawar' feat. wholesoul String Quartet","c":"Songs With Strings","d":183},{"i":120,"id":"8Wi1_i96rTk","t":"M.A.D. | The Get Down 9 | @onsetevents_","c":"STEEZY","d":186},{"i":121,"id":"8bOV8_yRKsc","t":"Tinashe - Party Favors - Choreography by @_TriciaMiranda | @Tinashe - Filmed by @TimMilgram","c":"Tricia Miranda","d":531},{"i":122,"id":"wpjhg1t_g_Y","t":"YUMMY BY JUSTIN BIEBER | A FILM BY PARRIS GOEBEL","c":"Parris Goebel","d":254},{"i":123,"id":"DmC2QQESN6E","t":"WILLOW: Tiny Desk Concert","c":"NPR Music","d":1190},{"i":124,"id":"V9PVRfjEBTI","t":"Billie Eilish - BIRDS OF A FEATHER (Official Music Video)","c":"Billie Eilish","d":231},{"i":125,"id":"FfesqRkdSEk","t":"Chlöe - Have Mercy (Official Video)","c":"Chlöe","d":214},{"i":126,"id":"_cbNqoAeRto","t":"Missy Elliott - WTF (Where They From) @_TriciaMiranda Choreography - Filmed by @TimMilgram","c":"Tricia Miranda","d":337},{"i":127,"id":"jrjESdPsLxE","t":"Tinashe - Nasty (Official Video)","c":"Tinashe","d":180},{"i":128,"id":"9XqdJl3Lmzw","t":"2025 Better in Denim.","c":"GapJapanKK","d":91},{"i":129,"id":"qQjN97Mbkz4","t":"TATE MCRAE - It's ok I'm ok | Kyle Hanagami Choreography","c":"KYLE HANAGAMI","d":194},{"i":130,"id":"qanl1s7K2Kc","t":"Tove Lo - Glad He's Gone","c":"Tove Lo","d":209},{"i":131,"id":"tSTd2pQTb4Q","t":"Rachel Zegler - Fame Is A Gun (Addison Rae cover)","c":"Zegler Source","d":149},{"i":132,"id":"JasHZcNhhYQ","t":"AMAARAE - ANGELS IN TIBET | PROJECT [ORIGINAL CHOREO by ME] #amaarae #angelsintibet","c":" M.O.G","d":140},{"i":133,"id":"f1OO9QhWaWU","t":"It's Ok I'm Ok by Tate Mcrae | Dance Visual, Choreographed & Directed by Kelly Sweeney","c":"Kelly Sweeney","d":116},{"i":134,"id":"yuIB3jmC_0M","t":"STORM II","c":"GENER8ION","d":174},{"i":135,"id":"G6ID6U4Xd7k","t":"The Hunger Games (but better) - A Parody","c":"Grace Reiter","d":2533},{"i":136,"id":"3KQjOE1AuN4","t":"Malcolm Todd - I Saw Your Face (Official Video)","c":"Malcolm Todd","d":193},{"i":137,"id":"sHZXATIqdr4","t":"Doja Cat - Demons (Live at Coachella 2024)","c":"Doja Cat","d":233},{"i":138,"id":"p62rfWxs6a8","t":"Regina Spektor - \"Samson\" [OFFICIAL VIDEO]","c":"Regina Spektor","d":205},{"i":139,"id":"Eq5inG547JA","t":"Regina Spektor: Tiny Desk Concert","c":"NPR Music","d":1463},{"i":140,"id":"MMEpaVL_WsU","t":"Regina Spektor - \"Eet\" [Official Music Video]","c":"Regina Spektor","d":233},{"i":141,"id":"Id_0DsBctYg","t":"MARINA - CUNTISSIMO (Official Video)","c":"MARINA","d":241},{"i":142,"id":"PBkIDKSscqI","t":"Nothing For You (Official Video) | Heartthrob","c":"Rob Anderson","d":193},{"i":143,"id":"sn3cHUtNZKo","t":"Caroline Polachek - So Hot You're Hurting My Feelings (Official Video)","c":"Caroline Polachek","d":194},{"i":144,"id":"0W-N1DqpmiM","t":"Slayyyter - DANCE... (Official Video)","c":"slayyyter","d":288},{"i":145,"id":"-XQTrLq6M8Y","t":"hemlocke springs - sever the blight (Official Video)","c":"hemlocke springs","d":175},{"i":146,"id":"-CHZlc4bbzY","t":"¿Téo? - Uno Dos (feat. Jaden Smith) [Official Music Video 2017]","c":"¿Téo?","d":186},{"i":147,"id":"kbBL3e00qrI","t":"AUDREY NUNA - damn Right (Official Video)","c":"audrey Nuna","d":167},{"i":148,"id":"q0oGhx2JT1A","t":"Victoria Monét - Alright (Official Video)","c":"Victoria Monét","d":194},{"i":149,"id":"knKpN0A6WWQ","t":"Carly Rae Jepsen - Don’t Leave Me on the Dance Floor (Official Music Video)","c":"Carly Rae Jepsen","d":357},{"i":150,"id":"RM7lw0Ovzq0","t":"JAŸ-Z - The Story of O.J.","c":"JAŸ-Z","d":254},{"i":151,"id":"adojY1SI-70","t":"Ian McConnell - Bangladesh (Official Music Video)","c":"Ian McConnell","d":50},{"i":152,"id":"dISEkoPXxXI","t":"Bangladesh (Poodee Edit)","c":"Ian McConnell","d":292},{"i":153,"id":"pt8VYOfr8To","t":"Britney Spears - Work Bitch (Official Video)","c":"Britney Spears","d":235},{"i":154,"id":"IHNzOHi8sJs","t":"BLACKPINK - ‘뚜두뚜두 (DDU-DU DDU-DU)’ M/V","c":"BLACKPINK","d":216},{"i":155,"id":"l8ZXSO1-_EY","t":"BLACKPINK 'DDU DU DDU DU' DANCE VIDEO (Boys Version - Spain)","c":"UY Albert!","d":215},{"i":156,"id":"2XY3AvVgDns","t":"Beyoncé - Countdown (Official Video)","c":"Beyoncé","d":213},{"i":157,"id":"0KQnOFDpotc","t":"Just saying somethings about Women and African-Americans | Standup Desk","c":"Standup Desk","d":558},{"i":158,"id":"K4r4lysSgLE","t":"Beyoncé - Haunted (Official Video)","c":"Beyoncé","d":322},{"i":159,"id":"IyuUWOnS9BY","t":"Beyoncé - ***Flawless ft. Chimamanda Ngozi Adichie","c":"Beyoncé","d":253},{"i":160,"id":"jcF5HtGvX5I","t":"Beyoncé - Yoncé (Video)","c":"Beyoncé","d":123},{"i":161,"id":"L_u97PqWX6g","t":"N.E.R.D & Rihanna - Lemon","c":"NERD","d":189},{"i":162,"id":"4iuGfuwTV1w","t":"Only Gay Guy in the Frat | Conor Janda | Stand Up Comedy","c":"Don't Tell Comedy","d":737},{"i":163,"id":"BFriiyPtF80","t":"Baited ft. Pat Regan - 'Mental Health' | Ziwe","c":"Ziwe","d":585},{"i":164,"id":"BtAz62B51qY","t":"CALEB HEARON IS AN ICONIC GUEST | ZIWE INTERVIEW","c":"Ziwe","d":961},{"i":165,"id":"PjbkafIMdl8","t":"GEORGE SANTOS IS AN ICONIC GUEST | ZIWE INTERVIEW","c":"Ziwe","d":1073},{"i":166,"id":"W8gnITfHTeI","t":"“Pat” Is the Least Sexy Name - Pat Regan - Stand-Up Featuring","c":"Comedy Central Stand-Up","d":367},{"i":167,"id":"5RNy_1odv20","t":"SIENNA SPIRO - Die On This Hill (Official Music Video)","c":"Lyrical Lemonade","d":241},{"i":168,"id":"7PTvxw4fc9M","t":"PLAYLUNCH - Keith (Official Music Video)","c":"Playlunch","d":252},{"i":169,"id":"y4j12_RNkh0","t":"half•alive - BILLIONS / THE WOLF / THE WONDER","c":"half•alive","d":650},{"i":170,"id":"X1qVQH1NRIk","t":"Lucas Pretti - Falo Demais (Clipe Oficial)","c":"Lucas Pretti","d":176},{"i":171,"id":"yPRgUhPZy-w","t":"CupcakKe - Grilling N****S | Lawd Jesus (Official Music Video)","c":"cupcakKe","d":297},{"i":172,"id":"t6sHHHU82aQ","t":"#MeganMonday: I Think I love Her Freestyle","c":"Megan Thee Stallion","d":103},{"i":173,"id":"Jhhd_tEaJEQ","t":"STREETSTAR 2013 - Vogue Femme Final Battle Lasseindra (FRA) vs Ida\"Inxi\" Holmlund (FIN)","c":"streetstar","d":431},{"i":174,"id":"Bc9Y58TeZk0","t":"Chloe x Halle - Forgive Me (Official Video)","c":"Chloe x Halle","d":187},{"i":175,"id":"OPS8WTYqxeM","t":"Chloe x Halle - Ungodly Hour (Official Video)","c":"Chloe x Halle","d":259},{"i":176,"id":"3OYjXb7Yr30","t":"Bree Runway - THAT GIRL (Official Video)","c":"Bree Runway","d":128},{"i":177,"id":"JnqDGWp6CSM","t":"Remi Wolf - Bottle (Official Video)","c":"Remi Wolf","d":294},{"i":178,"id":"xmEjZUULZEw","t":"Devon Again - cherry cola (official lyric video)","c":"Devon Again","d":179},{"i":179,"id":"VueBGZ1VXgc","t":"Remi Wolf - Photo ID (with Dominic Fike) (Official Video)","c":"Remi Wolf","d":214},{"i":180,"id":"9wHLO_mWRl8","t":"[SWF2] Battle Performance Jam Republic Dance Mirror","c":"Kboppit","d":117},{"i":181,"id":"FUhGgbndrLw","t":"Devon Again - gum v6.4 (Official Video)","c":"Devon Again","d":329},{"i":182,"id":"lJM-z0ohbkc","t":"FULL CIRCLE BOYS - BLEACHERS (Official Music Video)","c":"FULL CIRCLE BOYS","d":153},{"i":183,"id":"ekD1dTsM3Ng","t":"#MeganMonday: Like A G6 Freestyle","c":"Megan Thee Stallion","d":86},{"i":184,"id":"5YI6cjJZtxI","t":"Adam Oh, Cakes Da Killa & Baby Tate - BIRDS & THE BEES (Official Music Video)","c":"ADAM OH","d":217},{"i":185,"id":"AfGPYMgj4-8","t":"WILLOW - b i g f e e l i n g s (Official Visualizer)","c":"willowsmith","d":257},{"i":186,"id":"-s7TCuCpB5c","t":"Tinashe - 2 On (Official Video) ft. SchoolBoy Q","c":"Tinashe","d":231},{"i":187,"id":"sqk1-q8gXcY","t":"One of the Worst The Price Is Right Players Ever","c":"Shaun Davis","d":321},{"i":188,"id":"Em-zDxVv0Gs","t":"Beyoncé - Partition [Official Music Video]","c":"Bad Boy Edd","d":230},{"i":189,"id":"BS46C2z5lVE","t":"Route 94 - My Love (Official Video) ft. Jess Glynne","c":"Route 94","d":191},{"i":190,"id":"jlRoEVujTEk","t":"DJ_Dave - Next to U [Official Music Video]","c":"DJ_Dave","d":177},{"i":191,"id":"TGwZ7MNtBFU","t":"Gwen Stefani - Cool (Official Music Video)","c":"Gwen Stefani","d":248},{"i":192,"id":"6Wva3UTUYtM","t":"The Veronicas - ’Untouched’ (live for Like A Version)","c":"triple j","d":262}]}</script><!--VIDEOS:END-->
@@ -193,17 +297,17 @@
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt = s => { const m = Math.floor(s/60), r = s%60; return m + ':' + String(r).padStart(2,'0'); };
-  const fmtLong = s => { const h = Math.floor(s/3600), m = Math.round((s%3600)/60); return h ? `${h}h ${m}m` : `${m}m`; };
+  const fmtLong = s => { const h = Math.floor(s/3600), m = Math.round((s%3600)/60); return h ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m`; };
   const thumb = id => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+  const thumbBig = id => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
   const watch = id => `https://www.youtube.com/watch?v=${id}`;
-  const COLORS = ['#ff4d6d','#4cc9f0','#ffd166','#06d6a0','#c77dff','#f8961e','#90e0ef','#ef476f'];
+  const pad3 = n => String(n + 1).padStart(3, '0');
+  const COLORS = ['#D4FF3D','#4CC9F0','#FF7A59','#C77DFF','#FFD166','#06D6A0','#FF4D6D','#90E0EF'];
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem('kv.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
     set(k, v) { try { localStorage.setItem('kv.' + k, JSON.stringify(v)); } catch {} },
   };
-
-  $('subtitle').textContent = `${VIDEOS.length} videos in "${DATA.title}". 100 points each, max 10 per video.`;
 
   // ---------- tabs ----------
   function showTab(name) {
@@ -212,7 +316,9 @@
     $('results').classList.toggle('hidden', vote);
     $('tabVote').classList.toggle('on', vote);
     $('tabResults').classList.toggle('on', !vote);
+    $('bottombar').classList.toggle('show', !vote && ballots.length > 0);
     if (!vote) renderResults();
+    window.scrollTo({ top: 0 });
   }
   $('tabVote').onclick = () => showTab('vote');
   $('tabResults').onclick = () => showTab('results');
@@ -238,27 +344,34 @@
     updateRow(i);
   }
 
+  function meterHtml() {
+    const s = spent();
+    return Array.from({ length: 10 }, (_, k) => `<i class="${s >= (k+1)*10 ? 'full' : s > k*10 ? 'half' : ''}"></i>`).join('');
+  }
   function updateBudget() {
     const l = left();
-    $('left').textContent = l;
-    $('left').style.color = l === 0 ? 'var(--ok)' : '';
-    $('barFill').style.width = (spent() / BUDGET * 100) + '%';
-    $('pickCount').textContent = Object.keys(votes).length;
-    $('copyBallot').disabled = spent() === 0;
+    $('left').textContent = l; $('leftMini').textContent = l;
+    $('left').classList.toggle('done', l === 0);
+    $('meter').innerHTML = meterHtml(); $('meterMini').innerHTML = meterHtml();
+    const picks = Object.keys(votes).length;
+    $('pickCount').textContent = picks; $('pickCount2').textContent = picks;
+    $('copyBallot').disabled = spent() === 0; $('copyBallotMini').disabled = spent() === 0;
   }
 
-  function rowHtml(v) {
+  function rowHtml(v, k) {
     const n = votes[v.i] || 0;
-    return `<div class="vid${n ? ' picked' : ''}" data-i="${v.i}">
-      <a href="${watch(v.id)}" target="_blank" rel="noopener" title="Preview on YouTube"><img loading="lazy" src="${thumb(v.id)}" alt=""></a>
-      <div>
+    const dis = n >= CAP || left() === 0;
+    return `<div class="vid${n ? ' picked' : ''}" data-i="${v.i}" style="animation-delay:${Math.min(k, 12) * 25}ms">
+      <a class="th" href="${watch(v.id)}" target="_blank" rel="noopener" title="Preview on YouTube"><img loading="lazy" src="${thumb(v.id)}" alt=""></a>
+      <div class="body">
         <div class="t">${esc(v.t)}</div>
-        <div class="m">${esc(v.c)} · ${fmt(v.d)}</div>
-        <div class="ctl">
-          <button data-a="dec" ${n ? '' : 'disabled'}>−</button>
-          <span class="n${n ? ' on' : ''}">${n}</span>
-          <button data-a="inc" ${(n >= CAP || left() === 0) ? 'disabled' : ''}>+</button>
-          <button class="max" data-a="max" ${(n >= CAP || left() === 0) ? 'disabled' : ''}>Max</button>
+        <div class="bot">
+          <div class="m"><span class="idx">${pad3(v.i)}</span>${esc(v.c)} · ${fmt(v.d)}</div>
+          <div class="step">
+            <button data-a="dec" aria-label="Fewer points" ${n ? '' : 'disabled'}>−</button>
+            <button class="n${n ? ' on' : ''}" data-a="max" aria-label="Max points" title="Tap to max">${n}</button>
+            <button data-a="inc" aria-label="More points" ${dis ? 'disabled' : ''}>+</button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -267,14 +380,11 @@
   function updateRow(i) {
     const v = byIndex.get(i);
     const el = $('videoList').querySelector(`.vid[data-i="${i}"]`);
-    if (el && v) el.outerHTML = rowHtml(v);
-    // budget exhaustion changes other rows' + buttons
+    if (el && v) { const d = document.createElement('div'); d.innerHTML = rowHtml(v, 0); d.firstChild.style.animation = 'none'; el.replaceWith(d.firstChild); }
     const exhausted = left() === 0;
     $('videoList').querySelectorAll('.vid').forEach(r => {
       const j = +r.dataset.i, n = votes[j] || 0;
-      const dis = n >= CAP || exhausted;
-      r.querySelector('[data-a=inc]').disabled = dis;
-      r.querySelector('[data-a=max]').disabled = dis;
+      r.querySelector('[data-a=inc]').disabled = n >= CAP || exhausted;
     });
   }
 
@@ -284,7 +394,8 @@
     const sort = $('sort').value;
     if (sort === 'mine') list = list.slice().sort((a, b) => (votes[b.i] || 0) - (votes[a.i] || 0) || a.i - b.i);
     if (sort === 'title') list = list.slice().sort((a, b) => a.t.localeCompare(b.t));
-    $('videoList').innerHTML = list.map(rowHtml).join('') || `<div class="card muted">Nothing matches.</div>`;
+    $('videoList').innerHTML = list.map(rowHtml).join('') || `<div class="empty">Nothing matches.</div>`;
+    $('countLine').textContent = list.length === VIDEOS.length ? `${VIDEOS.length} videos` : `${list.length} of ${VIDEOS.length}`;
   }
 
   $('videoList').addEventListener('click', e => {
@@ -292,12 +403,21 @@
     const i = +b.closest('.vid').dataset.i, n = votes[i] || 0;
     if (b.dataset.a === 'inc') setVote(i, n + 1);
     if (b.dataset.a === 'dec') setVote(i, n - 1);
-    if (b.dataset.a === 'max') setVote(i, CAP);
+    if (b.dataset.a === 'max') setVote(i, n >= CAP ? 0 : CAP);
   });
   $('search').addEventListener('input', renderList);
   $('sort').addEventListener('change', renderList);
   $('onlyMine').onclick = () => { onlyMine = !onlyMine; $('onlyMine').classList.toggle('on', onlyMine); renderList(); };
   $('resetVotes').onclick = () => { if (confirm('Clear all your points?')) { votes = {}; store.set('votes', votes); updateBudget(); renderList(); $('ballotBox').classList.add('hidden'); } };
+
+  // sticky compact bar appears once the big budget block scrolls away
+  let stickyOn = false;
+  function checkSticky() {
+    const on = $('budgetBlock').getBoundingClientRect().bottom < 0 && !$('vote').classList.contains('hidden');
+    if (on !== stickyOn) { stickyOn = on; $('stickybar').classList.toggle('show', on); }
+  }
+  window.addEventListener('scroll', checkSticky, { passive: true });
+  window.addEventListener('resize', checkSticky);
 
   // ---------- ballot ----------
   function ballotCode() {
@@ -308,32 +428,32 @@
   function shareLink(code) { return location.origin + location.pathname + '#b=' + encodeURIComponent(code); }
   async function copy(text) {
     try { await navigator.clipboard.writeText(text); return true; }
-    catch { const t = $('ballotText'); t.value = text; t.select(); try { return document.execCommand('copy'); } catch { return false; } }
+    catch { const t = $('ballotText'); const old = t.value; t.value = text; t.select(); let ok = false; try { ok = document.execCommand('copy'); } catch {} t.value = old; return ok; }
   }
+  function setMsg(id, text, cls) { const el = $(id); el.textContent = text; el.className = 'msg ' + (cls || ''); }
   function showBallot(copyWhat) {
     const name = $('name').value.trim();
-    if (!name) { $('name').focus(); $('name').scrollIntoView({ behavior: 'smooth', block: 'center' }); setMsg('ballotMsg', 'Type your name first.', 'bad'); $('ballotBox').classList.remove('hidden'); return; }
+    $('ballotBox').classList.remove('hidden');
+    if (!name) { $('name').focus(); $('name').scrollIntoView({ behavior: 'smooth', block: 'center' }); setMsg('ballotMsg', 'Type your name first.', 'bad'); return; }
     const code = ballotCode();
     $('ballotText').value = code;
-    $('ballotBox').classList.remove('hidden');
     const l = left();
     const text = copyWhat === 'link' ? shareLink(code) : code;
     copy(text).then(ok => {
       const what = copyWhat === 'link' ? 'Share link' : 'Ballot';
       let m = ok ? `${what} copied. Paste it in the group chat.` : `Couldn't auto-copy. Select the code above and copy it.`;
-      if (l > 0) m += ` (You still have ${l} points unspent, that's allowed.)`;
+      if (l > 0) m += ` You still have ${l} points unspent, which is allowed.`;
       setMsg('ballotMsg', m, ok ? 'ok' : 'warn');
     });
     $('ballotBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   $('copyBallot').onclick = () => showBallot('code');
+  $('copyBallotMini').onclick = () => showBallot('code');
   $('copyAgain').onclick = () => showBallot('code');
   $('copyLink').onclick = () => showBallot('link');
 
-  function setMsg(id, text, cls) { const el = $(id); el.textContent = text; el.className = 'msg ' + (cls || ''); }
-
   // ---------- results ----------
-  let ballots = store.get('ballots', []);   // [{name, votes:{i:n}}]
+  let ballots = store.get('ballots', []);
   const RX = /KV1\|([^|\n]{1,40}?)\|([0-9]+:[0-9]+(?:,[0-9]+:[0-9]+)*)/g;
 
   function parseBallots(text) {
@@ -376,12 +496,15 @@
     ballots.splice(+b.dataset.rm, 1); store.set('ballots', ballots); renderResults();
   });
   $('cutoff').addEventListener('input', () => { store.set('cutoff', +$('cutoff').value); renderResults(); });
-  $('order').addEventListener('change', () => { store.set('order', $('order').value); renderResults(); });
+  let order = store.get('order', 'ranked');
+  const setOrder = o => { order = o; store.set('order', o); $('ordRanked').classList.toggle('on', o === 'ranked'); $('ordBuild').classList.toggle('on', o !== 'ranked'); renderResults(); };
+  $('ordRanked').onclick = () => setOrder('ranked');
+  $('ordBuild').onclick = () => setOrder('buildup');
   $('cutoff').value = store.get('cutoff', 25);
-  $('order').value = store.get('order', 'ranked');
+  $('ordRanked').classList.toggle('on', order === 'ranked'); $('ordBuild').classList.toggle('on', order !== 'ranked');
 
   function tally() {
-    const rows = new Map(); // i -> {v, total, voters:[{name, n, color}], max, golden:[names]}
+    const rows = new Map();
     const row = i => { if (!rows.has(i)) rows.set(i, { v: byIndex.get(i), total: 0, voters: [], max: 0, golden: [] }); return rows.get(i); };
     ballots.forEach((b, bi) => {
       let best = null;
@@ -399,45 +522,57 @@
     const rest = all.filter(r => !r.golden.length);
     const selected = golden.concat(rest).slice(0, Math.max(N, golden.length)).sort(score);
     const selSet = new Set(selected.map(r => r.v.i));
-    const out = all.filter(r => !selSet.has(r.v.i));
-    return { selected, out, N };
+    return { selected, out: all.filter(r => !selSet.has(r.v.i)) };
   }
 
-  function resHtml(r, rank, cum, isOut) {
-    return `<div class="res${isOut ? ' out' : ''}">
-      <div class="rank">${rank}</div>
-      <a href="${watch(r.v.id)}" target="_blank" rel="noopener"><img loading="lazy" src="${thumb(r.v.id)}" alt=""></a>
-      <div>
+  function resHtml(r, rank, cum, isOut, k) {
+    return `<div class="res${isOut ? ' out' : ''}${rank === 1 ? ' first' : ''}" style="animation-delay:${Math.min(k, 12) * 25}ms">
+      <span class="rank">${rank}</span>
+      <a class="th" href="${watch(r.v.id)}" target="_blank" rel="noopener"><img loading="lazy" src="${thumb(r.v.id)}" alt=""></a>
+      <div style="min-width:0">
         <div class="t">${esc(r.v.t)}</div>
         <div class="m">
-          ${r.golden.length ? `<span class="badge" title="Top pick of ${esc(r.golden.join(', '))}">★ ${esc(r.golden.join(', '))}</span>` : ''}
-          ${r.voters.map(x => `<span class="vd" title="${esc(x.name)}"><span class="dot" style="background:${x.color}"></span>${esc(x.name.split(' ')[0])} ${x.n}</span>`).join('')}
+          ${r.golden.length ? `<span class="gold" title="Top pick of ${esc(r.golden.join(', '))}">★ ${esc(r.golden.map(n => n.split(' ')[0]).join(', '))}</span>` : ''}
+          ${r.voters.map(x => `<span class="vd" title="${esc(x.name)}: ${x.n}"><span class="dot" style="background:${x.color}"></span>${x.n}</span>`).join('')}
           <span>${fmt(r.v.d)}${cum != null ? ` · ends ${fmtLong(cum)}` : ''}</span>
         </div>
       </div>
-      <div class="pts">${r.total}<small>pts</small></div>
+      <span class="pts">${r.total}</span>
     </div>`;
   }
 
   function renderResults() {
     $('voters').innerHTML = ballots.map((b, bi) => {
       const s = Object.values(b.votes).reduce((a, c) => a + c, 0);
-      return `<span class="voter"><span class="dot" style="background:${COLORS[bi % COLORS.length]}"></span>${esc(b.name)} <b>${s}</b><button data-rm="${bi}" title="Remove">×</button></span>`;
+      return `<span class="voter"><span class="dot" style="background:${COLORS[bi % COLORS.length]}"></span>${esc(b.name)}<span class="mono">${s}</span><button data-rm="${bi}" aria-label="Remove ${esc(b.name)}">×</button></span>`;
     }).join('');
-    $('cutoffLabel').textContent = $('cutoff').value;
     const has = ballots.length > 0;
     $('resultControls').classList.toggle('hidden', !has);
-    if (!has) { $('resultList').innerHTML = `<div class="card muted">No ballots yet. Paste the codes from the group chat above.</div>`; return; }
+    $('bottombar').classList.toggle('show', has && !$('results').classList.contains('hidden'));
+    if (!has) { $('resultList').innerHTML = `<div class="empty">No ballots yet. Paste the codes from the group chat above.</div>`; $('summary').textContent = 'Paste the ballots from the group chat. Golden picks lock in first, the rest rank by points.'; return; }
 
     const { selected, out } = tally();
-    const order = $('order').value;
     const play = order === 'buildup' ? selected.slice().reverse() : selected;
-    let cum = 0;
     const total = selected.reduce((a, r) => a + r.v.d, 0);
-    $('runtime').textContent = `${selected.length} videos · ${fmtLong(total)} total`;
+    $('cutoffLabel').textContent = $('cutoff').value;
+    $('runtime').textContent = fmtLong(total);
+    $('runtimeSub').textContent = `${selected.length} videos`;
+    $('summary').textContent = `${ballots.length} ballot${ballots.length === 1 ? '' : 's'} in. ${selected.length} make the cut, ${fmtLong(total)} of screen time.`;
     const rankOf = new Map(selected.map((r, k) => [r.v.i, k + 1]));
-    let html = play.map(r => { cum += r.v.d; return resHtml(r, rankOf.get(r.v.i), cum, false); }).join('');
-    if (out.length) html += `<div class="line">below the line (${out.length} more got points)</div>` + out.map((r, k) => resHtml(r, selected.length + k + 1, null, true)).join('');
+    const up = play[0];
+    $('upnext').innerHTML = `
+      <span class="eyebrow" style="color:var(--accent)">${order === 'buildup' ? 'Opener' : 'Up first'} · ${String(rankOf.get(up.v.i)).padStart(2, '0')}</span>
+      <a class="big" href="${watch(up.v.id)}" target="_blank" rel="noopener"><img src="${thumbBig(up.v.id)}" alt=""></a>
+      <div class="r">
+        <div style="min-width:0">
+          <h2 class="display">${esc(up.v.t.replace(/\s*[\(\[].*$/, ''))}</h2>
+          <div class="sub">${esc(up.v.c)} · ${fmt(up.v.d)} · ${up.voters.length} voter${up.voters.length === 1 ? '' : 's'}${up.golden.length ? ' · ★ ' + esc(up.golden.map(n => n.split(' ')[0]).join(', ')) : ''}</div>
+        </div>
+        <div class="num pts">${up.total}<small>points</small></div>
+      </div>`;
+    let cum = 0;
+    let html = play.map((r, k) => { cum += r.v.d; return resHtml(r, rankOf.get(r.v.i), cum, false, k); }).join('');
+    if (out.length) html += `<div class="line"><i></i><span>Below the line · ${out.length} more got points</span><i></i></div>` + out.map((r, k) => resHtml(r, selected.length + k + 1, null, true, k)).join('');
     $('resultList').innerHTML = html;
     $('openQueue').onclick = () => {
       const ids = play.slice(0, 50).map(r => r.v.id);
