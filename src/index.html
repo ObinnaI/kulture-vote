@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kulture Night</title>
+<meta name="description" content="Pick what we watch. 100 points each, max 10 per video.">
+<meta name="theme-color" content="#0B0B0C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0B0C; --surface: #141416; --surface2: #1C1C20; --line: #1C1C20; --line2: #2A2A2F;
+    --text: #F4F4F2; --text2: #B4B4BA; --muted: #8A8A90; --faint: #808088;
+    --accent: #D4FF3D; --on-accent: #0B0B0C;
+    --ok: #7CF29C; --warn: #FFD166; --bad: #FF7A7A;
+    --display: 'Syne', system-ui, sans-serif; --body: 'Instrument Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --ease: cubic-bezier(.16, 1, .3, 1); --ease-io: cubic-bezier(.76, 0, .24, 1);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 var(--body); -webkit-font-smoothing: antialiased; }
+  body.locked { overflow: hidden; }
+  a { color: inherit; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: 0; padding: 0; }
+  button:disabled { opacity: .3; cursor: default; }
+  input::placeholder, textarea::placeholder { color: #6E6E76; }
+  ::selection { background: var(--accent); color: var(--on-accent); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px 120px; }
+  @media (min-width: 480px) { .wrap { padding: 0 24px 120px; } }
+
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .display { font-family: var(--display); font-weight: 800; letter-spacing: -.035em; line-height: .92; text-transform: uppercase; }
+  .num { font-family: var(--display); font-weight: 800; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+
+  /* ---------- preloader ---------- */
+  .loader { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; flex-direction: column; justify-content: space-between; padding: 24px; transition: transform .9s var(--ease-io); will-change: transform; }
+  .loader.out { transform: translateY(-100%); }
+  .loader.gone { display: none; }
+  .loader .word { font-family: var(--display); font-weight: 800; font-size: clamp(40px, 12vw, 160px); line-height: .9; letter-spacing: -.04em; text-transform: uppercase; display: flex; flex-wrap: wrap; }
+  .loader .word .l { display: block; overflow: hidden; }
+  .loader .word .l > span { display: block; transform: translateY(110%); transition: transform .9s var(--ease); transition-delay: calc(var(--i) * 45ms); }
+  .loader.go .word .l > span { transform: none; }
+  .loader .word .l:nth-child(3) > span { color: var(--accent); }
+  .loader .foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .loader .count { font-family: var(--display); font-weight: 800; font-size: clamp(48px, 10vw, 96px); line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+  .loader .count small { font-size: .4em; color: var(--muted); margin-left: 2px; }
+  .loader .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--line2); }
+  .loader .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s linear; }
+  .loader .tag { text-align: right; max-width: 50%; }
+
+  /* ---------- reveals ---------- */
+  .l { display: block; overflow: hidden; }
+  .l > span { display: block; transform: translateY(112%); transition: transform 1s var(--ease); transition-delay: calc(var(--i, 0) * 90ms); }
+  .reveal .l > span { transform: none; }
+  .fade { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .9s var(--ease); transition-delay: calc(var(--i, 0) * 90ms); }
+  .reveal .fade { opacity: 1; transform: none; }
+  .vid, .res { opacity: 0; transform: translateY(18px); transition: opacity .55s ease, transform .75s var(--ease); }
+  .vid.in, .res.in { opacity: 1; transform: none; }
+
+  /* ---------- marquee ---------- */
+  .marquee { overflow: hidden; margin: 18px -20px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 9px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  @media (min-width: 480px) { .marquee { margin: 18px -24px 0; } }
+  .marquee .track { display: flex; width: max-content; animation: marquee 28s linear infinite; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .marquee .track span { padding: 0 18px; }
+  .marquee .track em { font-style: normal; color: var(--accent); }
+  @keyframes marquee { to { transform: translateX(-50%); } }
+
+  /* top */
+  .top { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 0; gap: 12px; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; background: var(--surface); border-radius: 99px; }
+  .seg button { height: 36px; padding: 0 18px; border-radius: 99px; font-size: 13px; font-weight: 600; color: var(--muted); transition: background .25s, color .25s; }
+  .seg button.on { background: var(--text); color: var(--bg); }
+
+  /* hero */
+  .hero { padding: 30px 0 0; display: flex; flex-direction: column; gap: 16px; }
+  .hero h1 { margin: 0; font-size: clamp(40px, 12.5vw, 76px); }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text2); max-width: 380px; }
+
+  .field { padding: 26px 0 0; display: flex; flex-direction: column; gap: 8px; }
+  .field input { width: 100%; height: 52px; background: transparent; border: 0; border-bottom: 1px solid var(--line2); border-radius: 0; outline: 0; font-family: var(--display); font-weight: 700; font-size: 24px; color: var(--text); transition: border-color .25s; }
+  .field input:focus { border-color: var(--accent); }
+
+  /* budget */
+  .budget { margin-top: 26px; padding: 18px 20px 20px; background: var(--surface); border-radius: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .budget .row { display: flex; align-items: flex-end; justify-content: space-between; }
+  .budget .big { font-size: 64px; color: var(--accent); transition: color .3s; }
+  .budget .big.done { color: var(--ok); }
+  .meter { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; height: 8px; }
+  .meter i { display: block; border-radius: 99px; background: var(--line2); transition: background .25s, transform .25s; transform-origin: left; }
+  .meter i.full { background: var(--accent); } .meter i.half { background: color-mix(in srgb, var(--accent) 50%, transparent); }
+  .btn { position: relative; overflow: hidden; height: 56px; padding: 0 22px; border-radius: 99px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: .02em; text-transform: uppercase; text-decoration: none; transition: transform .25s var(--ease), opacity .2s, background .25s, color .25s; white-space: nowrap; }
+  .btn:active { transform: scale(.97); }
+  .btn.accent { background: var(--accent); color: var(--on-accent); }
+  .btn.ghost { border: 1px solid var(--line2); color: var(--text); font-family: var(--body); font-weight: 600; text-transform: none; letter-spacing: 0; font-size: 14px; height: 48px; }
+  .btn svg { flex-shrink: 0; transition: transform .35s var(--ease); }
+  @media (hover: hover) {
+    .btn.accent:hover { transform: translateY(-2px); }
+    .btn.accent:hover svg { transform: translateX(4px); }
+    .btn.ghost:hover { background: var(--surface); }
+    .vid a.th img, .res a.th img, .upnext img { transition: transform .8s var(--ease); }
+    .vid a.th:hover img, .res a.th:hover img, .upnext a.big:hover img { transform: scale(1.06); }
+    .step button:not(:disabled):hover { background: var(--surface2); }
+    .chip:not(.on):hover, .sortwrap:hover { border-color: var(--muted); }
+  }
+
+  /* compact sticky bar */
+  .stickybar { position: sticky; top: 0; z-index: 10; margin: 0 -20px; padding: 10px 20px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 14px; opacity: 0; pointer-events: none; transform: translateY(-8px); transition: opacity .3s, transform .4s var(--ease); }
+  .stickybar.show { opacity: 1; pointer-events: auto; transform: none; }
+  .stickybar .num { font-size: 30px; color: var(--accent); min-width: 44px; }
+  .stickybar .meter { flex: 1; height: 6px; }
+  .stickybar .btn { height: 42px; padding: 0 16px; font-size: 13px; }
+  @media (min-width: 480px) { .stickybar { margin: 0 -24px; padding: 10px 24px; } }
+
+  .panel { margin-top: 14px; padding: 16px; background: var(--surface); border-radius: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .code { width: 100%; min-height: 64px; resize: none; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line2); border-radius: 12px; color: var(--text); font-family: var(--mono); font-size: 12px; outline: 0; word-break: break-all; transition: border-color .25s; }
+  .code:focus { border-color: var(--accent); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .actions > * { flex: 1 1 140px; }
+  .msg { font-size: 13px; min-height: 1.2em; color: var(--muted); }
+  .msg.ok { color: var(--ok); } .msg.warn { color: var(--warn); } .msg.bad { color: var(--bad); }
+
+  /* filters */
+  .filters { padding: 22px 0 0; display: flex; gap: 8px; align-items: center; }
+  .search { flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border: 1px solid var(--line2); border-radius: 99px; min-width: 0; transition: border-color .25s; }
+  .search:focus-within { border-color: var(--accent); }
+  .search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font-size: 14px; }
+  .search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+  .chip { height: 44px; padding: 0 14px; border: 1px solid var(--line2); border-radius: 99px; font-size: 13px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; transition: background .25s, color .25s, border-color .25s; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .chip .mono { font-family: var(--mono); font-size: 11px; opacity: .8; }
+  .sortwrap { position: relative; height: 44px; width: 44px; flex-shrink: 0; border: 1px solid var(--line2); border-radius: 99px; display: flex; align-items: center; justify-content: center; transition: border-color .25s; }
+  .sortwrap select { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+
+  /* vote list */
+  .list { margin-top: 18px; display: flex; flex-direction: column; border-bottom: 1px solid var(--line); }
+  .vid { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); }
+  @media (min-width: 480px) { .vid { grid-template-columns: 128px minmax(0, 1fr); gap: 14px; } .vid img { width: 128px; height: 72px; } }
+  .vid .body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .vid .bot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .vid .idx { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-right: 4px; }
+  .vid a.th { display: block; border-radius: 8px; overflow: hidden; outline: 2px solid transparent; transition: outline-color .25s; line-height: 0; }
+  .vid.picked a.th { outline-color: var(--accent); }
+  .vid img { width: 96px; height: 54px; object-fit: cover; display: block; background: #000; }
+  .vid .t { font-size: 14px; font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .vid .m { font-size: 12px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .step { display: flex; align-items: center; background: var(--surface); border-radius: 99px; padding: 3px; }
+  .step button { width: 34px; height: 34px; border-radius: 99px; font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center; color: var(--text); transition: background .15s, transform .15s; }
+  .step button:not(:disabled):active { background: var(--surface2); transform: scale(.9); }
+  .step .n { width: 24px; text-align: center; font-family: var(--display); font-weight: 800; font-size: 16px; color: var(--faint); transition: color .25s; }
+  .step .n.on { color: var(--accent); }
+  .step .n.pop { animation: pop .3s var(--ease); }
+  @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+  .footline { display: flex; justify-content: space-between; gap: 12px; padding: 14px 0 0; }
+  .empty { padding: 32px 0; color: var(--muted); text-align: center; }
+
+  /* results */
+  .voters { display: flex; flex-wrap: wrap; gap: 6px; }
+  .voter { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 6px 0 10px; border: 1px solid var(--line2); border-radius: 99px; font-size: 13px; font-weight: 600; animation: popin .5s var(--ease) both; }
+  @keyframes popin { from { opacity: 0; transform: scale(.8); } }
+  .voter .mono { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .voter button { width: 22px; height: 22px; border-radius: 99px; color: var(--muted); font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .voter button:hover { background: var(--surface2); color: var(--text); }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+  .cards { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cardx { padding: 14px 16px; background: var(--surface); border-radius: 16px; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+  .cardx .big { font-size: 30px; }
+  .cardx input[type=range] { width: 100%; margin: 4px 0 0; accent-color: var(--accent); height: 20px; }
+  .segw { margin-top: 8px; }
+  .segw .seg { width: 100%; }
+  .upnext { margin-top: 16px; padding: 16px; background: var(--surface); border-radius: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .upnext a.big { display: block; border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 9; background: #000; line-height: 0; }
+  .upnext img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .upnext .r { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .upnext h2 { margin: 0; font-size: clamp(22px, 6vw, 34px); overflow-wrap: anywhere; }
+  .upnext .sub { color: var(--text2); font-size: 14px; margin-top: 6px; }
+  .upnext .pts { font-size: 56px; color: var(--accent); flex-shrink: 0; }
+  .upnext .pts small { display: block; font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-align: right; }
+  .res { display: grid; grid-template-columns: 46px 72px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+  .res.out { opacity: 0; }
+  .res.out.in { opacity: .45; }
+  .res .rank { font-family: var(--display); font-weight: 800; font-size: 24px; letter-spacing: -.06em; color: var(--faint); }
+  .res.first .rank { color: var(--accent); }
+  .res a.th { display: block; border-radius: 6px; overflow: hidden; line-height: 0; }
+  .res img { width: 72px; height: 40px; object-fit: cover; display: block; background: #000; }
+  .res .t { font-size: 14px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res .m { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 5px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .gold { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px; border-radius: 99px; background: var(--accent); color: var(--on-accent); font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+  .vd { display: inline-flex; align-items: center; gap: 4px; }
+  .vd .dot { width: 6px; height: 6px; }
+  .res .pts { font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -.02em; text-align: right; font-variant-numeric: tabular-nums; }
+  .line { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  .line i { flex: 1; border-top: 1px dashed var(--line2); }
+  @media (max-width: 400px) { .res { grid-template-columns: 44px minmax(0, 1fr) auto; } .res a.th { display: none; } }
+
+  .bottombar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 10px 20px calc(10px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); transform: translateY(110%); transition: transform .5s var(--ease); }
+  .bottombar.show { transform: none; }
+  .bottombar .in { max-width: 720px; margin: 0 auto; display: flex; gap: 8px; }
+  .bottombar .btn { flex: 1; height: 50px; font-size: 13px; padding: 0 14px; min-width: 0; }
+  .bottombar .btn.ghost { flex: 0 0 auto; height: 50px; padding: 0 16px; }
+
+  .hidden { display: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .l > span, .fade, .vid, .res { opacity: 1; transform: none; }
+    .res.out { opacity: .45; }
+  }
+</style>
+</head>
+<body class="locked">
+
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="eyebrow">Loading the playlist</div>
+  <div class="word" id="loadWord"></div>
+  <div class="foot">
+    <div class="count"><span id="loadCount">000</span><small>%</small></div>
+    <div class="eyebrow tag" id="loadTag">Vol. 01</div>
+  </div>
+  <div class="bar"><i id="loadBar"></i></div>
+</div>
+
+<div class="wrap">
+  <header class="top fade">
+    <span class="eyebrow" style="white-space:nowrap">Kulture Night</span>
+    <nav class="seg" aria-label="Section">
+      <button id="tabVote" class="on">Vote</button>
+      <button id="tabResults">Results</button>
+    </nav>
+  </header>
+  <div class="marquee fade" style="--i:1" aria-hidden="true"><div class="track" id="marquee"></div></div>
+
+  <!-- ===================== VOTE ===================== -->
+  <section id="vote">
+    <div class="hero">
+      <h1 class="display"><span class="l" style="--i:0"><span>Pick</span></span><span class="l" style="--i:1"><span>what we</span></span><span class="l" style="--i:2"><span><em>watch.</em></span></span></h1>
+      <p class="fade" style="--i:3" id="intro">You have <b>100 points</b>. Put up to <b>10 on any one video</b>. Your single top pick is locked in no matter what. When you're done, copy your ballot and paste it in the group chat.</p>
+    </div>
+
+    <div class="field fade" style="--i:4">
+      <label class="eyebrow" for="name">Your name</label>
+      <input type="text" id="name" placeholder="Type it like you'd say it" maxlength="24" autocomplete="off">
+    </div>
+
+    <div class="budget fade" style="--i:5" id="budgetBlock">
+      <div class="row">
+        <div>
+          <div class="eyebrow">Points left</div>
+          <div class="num big" id="left">100</div>
+        </div>
+        <div style="text-align:right">
+          <div class="eyebrow">Picks</div>
+          <div class="num" id="pickCount" style="font-size:28px">0</div>
+        </div>
+      </div>
+      <div class="meter" id="meter"></div>
+      <button class="btn accent" id="copyBallot">Copy ballot
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <div class="stickybar" id="stickybar">
+      <div class="num" id="leftMini">100</div>
+      <div class="meter" id="meterMini"></div>
+      <button class="btn accent" id="copyBallotMini">Copy ballot</button>
+    </div>
+
+    <div class="panel hidden" id="ballotBox">
+      <div class="eyebrow">Your ballot code. Paste it in the group chat, or send the link.</div>
+      <textarea class="code" id="ballotText" readonly rows="3"></textarea>
+      <div class="actions">
+        <button class="btn ghost" id="copyAgain">Copy code</button>
+        <button class="btn ghost" id="copyLink">Copy share link</button>
+      </div>
+      <div class="msg" id="ballotMsg"></div>
+    </div>
+
+    <div class="filters fade" style="--i:6">
+      <label class="search">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8A90" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" id="search" placeholder="Artist or title" aria-label="Search">
+      </label>
+      <button class="chip" id="onlyMine">My picks <span class="mono" id="pickCount2">0</span></button>
+      <div class="sortwrap" title="Sort">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16"/><path d="M7 12h10"/><path d="M10 17h4"/></svg>
+        <select id="sort" aria-label="Sort">
+          <option value="playlist">Playlist order</option>
+          <option value="mine">My points first</option>
+          <option value="title">A to Z</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="list" id="videoList"></div>
+
+    <div class="footline eyebrow"><span id="countLine"></span><span id="syncLine"></span></div>
+    <div class="footline eyebrow" style="padding-top:6px"><span>Tap art to preview · tap a number to max it</span></div>
+    <div class="actions" style="margin-top:18px"><button class="btn ghost" id="resetVotes">Reset my votes</button></div>
+  </section>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section id="results" class="hidden">
+    <div class="hero">
+      <h1 class="display"><span class="l" style="--i:0"><span>The</span></span><span class="l" style="--i:1"><span><em>set list.</em></span></span></h1>
+      <p class="fade" style="--i:2" id="summary">Paste the ballots from the group chat. Golden picks lock in first, the rest rank by points.</p>
+    </div>
+
+    <div class="panel fade" style="--i:3">
+      <label class="eyebrow" for="paste">Paste the group chat</label>
+      <textarea class="code" id="paste" rows="3" placeholder="KV2|Name|WDZJPJV__bQ:10,… codes are picked out, everything else is ignored"></textarea>
+      <div class="actions">
+        <button class="btn accent" id="addBallots" style="height:46px;font-size:13px">Add ballots</button>
+        <button class="btn ghost" id="clearBallots" style="height:46px;flex:0 0 auto">Clear</button>
+      </div>
+      <div class="msg" id="pasteMsg"></div>
+      <div class="voters" id="voters"></div>
+    </div>
+
+    <div id="resultControls" class="hidden">
+      <div class="cards">
+        <div class="cardx">
+          <span class="eyebrow">Watch</span>
+          <span class="num big" id="cutoffLabel">25</span>
+          <input type="range" id="cutoff" min="10" max="40" step="1" value="25" aria-label="How many videos to watch">
+        </div>
+        <div class="cardx">
+          <span class="eyebrow">Runtime</span>
+          <span class="num big" id="runtime">0m</span>
+          <span class="msg" id="runtimeSub"></span>
+        </div>
+      </div>
+      <div class="segw"><div class="seg" role="group" aria-label="Play order">
+        <button id="ordRanked" class="on">Ranked</button>
+        <button id="ordBuild">Best for last</button>
+      </div></div>
+      <div class="upnext" id="upnext"></div>
+    </div>
+
+    <div class="list" id="resultList"></div>
+    <div class="msg" id="resMsg" style="margin-top:10px"></div>
+  </section>
+</div>
+
+<div class="bottombar" id="bottombar">
+  <div class="in">
+    <button class="btn accent" id="openQueue">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <span>YouTube queue</span>
+    </button>
+    <button class="btn ghost" id="copyList">Copy list</button>
+  </div>
+</div>
+
+<!--VIDEOS:START--><script id="videos" type="application/json">{"title":"Playlist","url":"","updated":"","videos":[]}</script><!--VIDEOS:END-->
+<script>
+(() => {
+  const BUDGET = 100, CAP = 10, VER = 'KV2';
+  const DATA = JSON.parse(document.getElementById('videos').textContent);
+  const VIDEOS = DATA.videos;
+  const byId = new Map(VIDEOS.map(v => [v.id, v]));
+  const byIndex = new Map(VIDEOS.map(v => [v.i, v]));
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt = s => { const m = Math.floor(s/60), r = s%60; return m + ':' + String(r).padStart(2,'0'); };
+  const fmtLong = s => { const h = Math.floor(s/3600), m = Math.round((s%3600)/60); return h ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m`; };
+  const thumb = id => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+  const thumbBig = id => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+  const watch = id => `https://www.youtube.com/watch?v=${id}`;
+  const pad3 = n => String(n + 1).padStart(3, '0');
+  const COLORS = ['#D4FF3D','#4CC9F0','#FF7A59','#C77DFF','#FFD166','#06D6A0','#FF4D6D','#90E0EF'];
+  const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('kv.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('kv.' + k, JSON.stringify(v)); } catch {} },
+  };
+
+  // ---------- motion helpers ----------
+  const tweens = new WeakMap();
+  function tween(el, to, ms = 420) {
+    to = +to;
+    if (REDUCE) { el.textContent = to; return; }
+    const from = +(el.dataset.v ?? el.textContent) || 0;
+    if (from === to) { el.textContent = to; el.dataset.v = to; return; }
+    cancelAnimationFrame(tweens.get(el));
+    const t0 = performance.now();
+    const step = now => {
+      const p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(from + (to - from) * e);
+      if (p < 1) tweens.set(el, requestAnimationFrame(step)); else el.dataset.v = to;
+    };
+    tweens.set(el, requestAnimationFrame(step));
+  }
+  const rowIO = 'IntersectionObserver' in window && !REDUCE ? new IntersectionObserver(entries => {
+    let k = 0;
+    for (const en of entries) if (en.isIntersecting) { en.target.style.transitionDelay = (k++ % 8) * 45 + 'ms'; en.target.classList.add('in'); rowIO.unobserve(en.target); }
+  }, { rootMargin: '0px 0px -4% 0px' }) : null;
+  function watchRows(container) {
+    container.querySelectorAll('.vid:not(.in), .res:not(.in)').forEach(el => rowIO ? rowIO.observe(el) : el.classList.add('in'));
+  }
+  function revealSection(sec) {
+    sec.classList.remove('reveal'); void sec.offsetWidth; sec.classList.add('reveal');
+  }
+
+  // ---------- preloader ----------
+  function boot() {
+    const loader = $('loader');
+    const word = 'KULTURE';
+    $('loadWord').innerHTML = ['KULTURE', 'NIGHT'].map((w, wi) => `<span class="l" style="--i:${wi * 3}"><span>${w}</span></span>`).join('<span style="flex-basis:100%"></span>');
+    $('loadTag').textContent = `${VIDEOS.length} videos · Vol. 01`;
+    const quick = REDUCE || sessionStorage.getItem('kv.seen');
+    const finish = () => {
+      $('loadCount').textContent = '100'; $('loadBar').style.width = '100%';
+      loader.classList.add('out');
+      document.body.classList.remove('locked');
+      document.body.classList.add('reveal');
+      revealSection($('vote'));
+      setTimeout(() => loader.classList.add('gone'), 1000);
+      try { sessionStorage.setItem('kv.seen', '1'); } catch {}
+    };
+    if (quick) { loader.style.transition = 'none'; finish(); return; }
+    setTimeout(() => loader.classList.add('go'), 30);
+    const t0 = performance.now(), dur = 1500;
+    let done = false;
+    const fontsReady = (document.fonts ? document.fonts.ready : Promise.resolve()).catch(() => {});
+    const tick = now => {
+      const p = Math.min(1, (now - t0) / dur), e = p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      $('loadCount').textContent = String(Math.round(e * 100)).padStart(3, '0');
+      $('loadBar').style.width = (e * 100) + '%';
+      if (p < 1) requestAnimationFrame(tick); else done = true;
+    };
+    requestAnimationFrame(tick);
+    Promise.all([fontsReady, new Promise(r => setTimeout(r, dur + 150))]).then(finish);
+  }
+
+  // ---------- marquee ----------
+  const mq = `<span>Kulture Night</span><span>·</span><span><em>${VIDEOS.length} videos</em></span><span>·</span><span>100 points each</span><span>·</span><span>max 10 per video</span><span>·</span><span><em>Pick what we watch</em></span><span>·</span><span>Vol. 01</span><span>·</span>`;
+  $('marquee').innerHTML = mq + mq;
+
+  // ---------- tabs ----------
+  function showTab(name) {
+    const vote = name === 'vote';
+    $('vote').classList.toggle('hidden', !vote);
+    $('results').classList.toggle('hidden', vote);
+    $('tabVote').classList.toggle('on', vote);
+    $('tabResults').classList.toggle('on', !vote);
+    $('bottombar').classList.toggle('show', !vote && ballots.length > 0);
+    window.scrollTo({ top: 0 });
+    if (!vote) renderResults();
+    revealSection(vote ? $('vote') : $('results'));
+    if (vote) watchRows($('videoList'));
+  }
+  $('tabVote').onclick = () => showTab('vote');
+  $('tabResults').onclick = () => showTab('results');
+
+  // ---------- vote state (keyed by YouTube id so playlist edits never shift votes) ----------
+  let votes = store.get('votes2', {});
+  for (const k of Object.keys(votes)) if (!byId.has(k) || !(votes[k] > 0)) delete votes[k];
+  let onlyMine = false;
+  $('name').value = store.get('name', '');
+  $('name').addEventListener('input', () => { store.set('name', $('name').value.trim()); $('ballotBox').classList.add('hidden'); });
+
+  const spent = () => Object.values(votes).reduce((a, b) => a + b, 0);
+  const left = () => BUDGET - spent();
+
+  function setVote(id, n) {
+    n = Math.max(0, Math.min(CAP, n));
+    const cur = votes[id] || 0;
+    if (n - cur > left()) n = cur + left();
+    if (n > 0) votes[id] = n; else delete votes[id];
+    store.set('votes2', votes);
+    $('ballotBox').classList.add('hidden');
+    updateBudget();
+    updateRow(id);
+  }
+
+  function meterHtml() {
+    const s = spent();
+    return Array.from({ length: 10 }, (_, k) => `<i class="${s >= (k+1)*10 ? 'full' : s > k*10 ? 'half' : ''}"></i>`).join('');
+  }
+  function updateBudget() {
+    const l = left();
+    tween($('left'), l); tween($('leftMini'), l, 250);
+    $('left').classList.toggle('done', l === 0);
+    $('meter').innerHTML = meterHtml(); $('meterMini').innerHTML = meterHtml();
+    const picks = Object.keys(votes).length;
+    $('pickCount').textContent = picks; $('pickCount2').textContent = picks;
+    $('copyBallot').disabled = spent() === 0; $('copyBallotMini').disabled = spent() === 0;
+  }
+
+  function rowHtml(v) {
+    const n = votes[v.id] || 0;
+    const dis = n >= CAP || left() === 0;
+    return `<div class="vid${n ? ' picked' : ''}" data-id="${v.id}">
+      <a class="th" href="${watch(v.id)}" target="_blank" rel="noopener" title="Preview on YouTube"><img loading="lazy" src="${thumb(v.id)}" alt=""></a>
+      <div class="body">
+        <div class="t">${esc(v.t)}</div>
+        <div class="bot">
+          <div class="m"><span class="idx">${pad3(v.i)}</span>${esc(v.c)} · ${fmt(v.d)}</div>
+          <div class="step">
+            <button data-a="dec" aria-label="Fewer points" ${n ? '' : 'disabled'}>−</button>
+            <button class="n${n ? ' on' : ''}" data-a="max" aria-label="Max points" title="Tap to max">${n}</button>
+            <button data-a="inc" aria-label="More points" ${dis ? 'disabled' : ''}>+</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function updateRow(id) {
+    const v = byId.get(id);
+    const el = $('videoList').querySelector(`.vid[data-id="${id}"]`);
+    if (el && v) {
+      const d = document.createElement('div'); d.innerHTML = rowHtml(v);
+      const fresh = d.firstChild; fresh.style.transition = 'none'; fresh.classList.add('in');
+      el.replaceWith(fresh);
+      const n = fresh.querySelector('.n'); n.classList.add('pop');
+      requestAnimationFrame(() => { fresh.style.transition = ''; });
+    }
+    const exhausted = left() === 0;
+    $('videoList').querySelectorAll('.vid').forEach(r => {
+      const n = votes[r.dataset.id] || 0;
+      r.querySelector('[data-a=inc]').disabled = n >= CAP || exhausted;
+    });
+  }
+
+  function renderList() {
+    const q = $('search').value.trim().toLowerCase();
+    let list = VIDEOS.filter(v => (!q || (v.t + ' ' + v.c).toLowerCase().includes(q)) && (!onlyMine || votes[v.id]));
+    const sort = $('sort').value;
+    if (sort === 'mine') list = list.slice().sort((a, b) => (votes[b.id] || 0) - (votes[a.id] || 0) || a.i - b.i);
+    if (sort === 'title') list = list.slice().sort((a, b) => a.t.localeCompare(b.t));
+    $('videoList').innerHTML = list.map(rowHtml).join('') || `<div class="empty">Nothing matches.</div>`;
+    $('countLine').textContent = list.length === VIDEOS.length ? `${VIDEOS.length} videos` : `${list.length} of ${VIDEOS.length}`;
+    watchRows($('videoList'));
+  }
+
+  $('videoList').addEventListener('click', e => {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    const id = b.closest('.vid').dataset.id, n = votes[id] || 0;
+    if (b.dataset.a === 'inc') setVote(id, n + 1);
+    if (b.dataset.a === 'dec') setVote(id, n - 1);
+    if (b.dataset.a === 'max') setVote(id, n >= CAP ? 0 : CAP);
+  });
+  $('search').addEventListener('input', renderList);
+  $('sort').addEventListener('change', renderList);
+  $('onlyMine').onclick = () => { onlyMine = !onlyMine; $('onlyMine').classList.toggle('on', onlyMine); renderList(); };
+  $('resetVotes').onclick = () => { if (confirm('Clear all your points?')) { votes = {}; store.set('votes2', votes); updateBudget(); renderList(); $('ballotBox').classList.add('hidden'); } };
+
+  let stickyOn = false;
+  function checkSticky() {
+    const on = $('budgetBlock').getBoundingClientRect().bottom < 0 && !$('vote').classList.contains('hidden');
+    if (on !== stickyOn) { stickyOn = on; $('stickybar').classList.toggle('show', on); }
+  }
+  window.addEventListener('scroll', checkSticky, { passive: true });
+  window.addEventListener('resize', checkSticky);
+
+  // ---------- ballot ----------
+  function ballotCode() {
+    const name = $('name').value.trim().replace(/[|,:\s]+/g, ' ').trim();
+    const parts = VIDEOS.filter(v => votes[v.id]).map(v => `${v.id}:${votes[v.id]}`);
+    return `${VER}|${name}|${parts.join(',')}`;
+  }
+  function shareLink(code) { return location.origin + location.pathname + '#b=' + encodeURIComponent(code); }
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch { const t = $('ballotText'); const old = t.value; t.value = text; t.select(); let ok = false; try { ok = document.execCommand('copy'); } catch {} t.value = old; return ok; }
+  }
+  function setMsg(id, text, cls) { const el = $(id); el.textContent = text; el.className = 'msg ' + (cls || ''); }
+  function showBallot(copyWhat) {
+    const name = $('name').value.trim();
+    $('ballotBox').classList.remove('hidden');
+    if (!name) { $('name').focus(); $('name').scrollIntoView({ behavior: 'smooth', block: 'center' }); setMsg('ballotMsg', 'Type your name first.', 'bad'); return; }
+    const code = ballotCode();
+    $('ballotText').value = code;
+    const l = left();
+    const text = copyWhat === 'link' ? shareLink(code) : code;
+    copy(text).then(ok => {
+      const what = copyWhat === 'link' ? 'Share link' : 'Ballot';
+      let m = ok ? `${what} copied. Paste it in the group chat.` : `Couldn't auto-copy. Select the code above and copy it.`;
+      if (l > 0) m += ` You still have ${l} points unspent, which is allowed.`;
+      setMsg('ballotMsg', m, ok ? 'ok' : 'warn');
+    });
+    $('ballotBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  $('copyBallot').onclick = () => showBallot('code');
+  $('copyBallotMini').onclick = () => showBallot('code');
+  $('copyAgain').onclick = () => showBallot('code');
+  $('copyLink').onclick = () => showBallot('link');
+
+  // ---------- results ----------
+  let ballots = store.get('ballots2', []);
+  const RX2 = /KV2\|([^|\n]{1,40}?)\|([A-Za-z0-9_-]{11}:[0-9]+(?:,[A-Za-z0-9_-]{11}:[0-9]+)*)/g;
+  const RX1 = /KV1\|([^|\n]{1,40}?)\|([0-9]+:[0-9]+(?:,[0-9]+:[0-9]+)*)/g;
+
+  function parseBallots(text) {
+    const found = [], errors = []; let skipped = 0;
+    const take = (name, pairs, resolve) => {
+      const v = {}; let total = 0, bad = null;
+      for (const [key, n] of pairs) {
+        const vid = resolve(key);
+        if (!vid) { skipped++; continue; }
+        if (n < 1 || n > CAP) { bad = `${n} points on one video (max ${CAP})`; break; }
+        v[vid.id] = (v[vid.id] || 0) + n; total += n;
+      }
+      if (!bad && total > BUDGET) bad = `${total} points spent (max ${BUDGET})`;
+      if (!bad && !total) bad = 'none of its videos are in the playlist any more';
+      if (bad) errors.push(`${name}: rejected, ${bad}.`);
+      else found.push({ name, votes: v });
+    };
+    for (const m of text.matchAll(RX2)) take(m[1].trim(), m[2].split(',').map(p => { const [id, n] = p.split(':'); return [id, +n]; }), id => byId.get(id));
+    for (const m of text.matchAll(RX1)) take(m[1].trim(), m[2].split(',').map(p => p.split(':').map(Number)), i => byIndex.get(i));
+    return { found, errors, skipped };
+  }
+
+  function addBallots(text) {
+    const { found, errors, skipped } = parseBallots(text);
+    let replaced = 0;
+    for (const b of found) {
+      const k = b.name.toLowerCase();
+      const idx = ballots.findIndex(x => x.name.toLowerCase() === k);
+      if (idx >= 0) { ballots[idx] = b; replaced++; } else ballots.push(b);
+    }
+    store.set('ballots2', ballots);
+    const parts = [];
+    if (found.length) parts.push(`Added ${found.length} ballot${found.length === 1 ? '' : 's'}${replaced ? ` (${replaced} updated)` : ''}: ${found.map(b => b.name).join(', ')}.`);
+    if (skipped) parts.push(`${skipped} pick${skipped === 1 ? '' : 's'} for videos no longer in the playlist skipped.`);
+    if (!found.length && !errors.length) parts.push('No ballot codes found. They look like KV2|Name|WDZJPJV__bQ:10,…');
+    setMsg('pasteMsg', parts.concat(errors).join(' '), errors.length ? (found.length ? 'warn' : 'bad') : 'ok');
+    renderResults();
+  }
+  $('addBallots').onclick = () => { addBallots($('paste').value); $('paste').value = ''; };
+  $('clearBallots').onclick = () => { if (ballots.length && confirm('Remove all ballots?')) { ballots = []; store.set('ballots2', ballots); setMsg('pasteMsg', '', ''); renderResults(); } };
+  $('voters').addEventListener('click', e => {
+    const b = e.target.closest('button[data-rm]'); if (!b) return;
+    ballots.splice(+b.dataset.rm, 1); store.set('ballots2', ballots); renderResults();
+  });
+  $('cutoff').addEventListener('input', () => { store.set('cutoff', +$('cutoff').value); renderResults(); });
+  let order = store.get('order', 'ranked');
+  const setOrder = o => { order = o; store.set('order', o); $('ordRanked').classList.toggle('on', o === 'ranked'); $('ordBuild').classList.toggle('on', o !== 'ranked'); renderResults(); };
+  $('ordRanked').onclick = () => setOrder('ranked');
+  $('ordBuild').onclick = () => setOrder('buildup');
+  $('cutoff').value = store.get('cutoff', 25);
+  $('ordRanked').classList.toggle('on', order === 'ranked'); $('ordBuild').classList.toggle('on', order !== 'ranked');
+
+  function tally() {
+    const rows = new Map();
+    const row = id => { if (!rows.has(id)) rows.set(id, { v: byId.get(id), total: 0, voters: [], max: 0, golden: [] }); return rows.get(id); };
+    ballots.forEach((b, bi) => {
+      let best = null;
+      for (const [id, n] of Object.entries(b.votes)) {
+        if (!byId.has(id)) continue;
+        const r = row(id);
+        r.total += n; r.voters.push({ name: b.name, n, color: COLORS[bi % COLORS.length] }); r.max = Math.max(r.max, n);
+        if (!best || n > best.n || (n === best.n && r.v.i < best.i)) best = { id, n, i: r.v.i };
+      }
+      if (best) row(best.id).golden.push(b.name);
+    });
+    const score = (a, b) => b.total - a.total || b.voters.length - a.voters.length || b.max - a.max || a.v.i - b.v.i;
+    const all = [...rows.values()].sort(score);
+    const N = +$('cutoff').value;
+    const golden = all.filter(r => r.golden.length);
+    const rest = all.filter(r => !r.golden.length);
+    const selected = golden.concat(rest).slice(0, Math.max(N, golden.length)).sort(score);
+    const selSet = new Set(selected.map(r => r.v.id));
+    return { selected, out: all.filter(r => !selSet.has(r.v.id)) };
+  }
+
+  function resHtml(r, rank, cum, isOut) {
+    return `<div class="res${isOut ? ' out' : ''}${rank === 1 ? ' first' : ''}">
+      <span class="rank">${rank}</span>
+      <a class="th" href="${watch(r.v.id)}" target="_blank" rel="noopener"><img loading="lazy" src="${thumb(r.v.id)}" alt=""></a>
+      <div style="min-width:0">
+        <div class="t">${esc(r.v.t)}</div>
+        <div class="m">
+          ${r.golden.length ? `<span class="gold" title="Top pick of ${esc(r.golden.join(', '))}">★ ${esc(r.golden.map(n => n.split(' ')[0]).join(', '))}</span>` : ''}
+          ${r.voters.map(x => `<span class="vd" title="${esc(x.name)}: ${x.n}"><span class="dot" style="background:${x.color}"></span>${x.n}</span>`).join('')}
+          <span>${fmt(r.v.d)}${cum != null ? ` · ends ${fmtLong(cum)}` : ''}</span>
+        </div>
+      </div>
+      <span class="pts" data-to="${r.total}">0</span>
+    </div>`;
+  }
+
+  function renderResults() {
+    $('voters').innerHTML = ballots.map((b, bi) => {
+      const s = Object.values(b.votes).reduce((a, c) => a + c, 0);
+      return `<span class="voter" style="animation-delay:${bi * 60}ms"><span class="dot" style="background:${COLORS[bi % COLORS.length]}"></span>${esc(b.name)}<span class="mono">${s}</span><button data-rm="${bi}" aria-label="Remove ${esc(b.name)}">×</button></span>`;
+    }).join('');
+    const has = ballots.length > 0;
+    $('resultControls').classList.toggle('hidden', !has);
+    $('bottombar').classList.toggle('show', has && !$('results').classList.contains('hidden'));
+    if (!has) { $('resultList').innerHTML = `<div class="empty">No ballots yet. Paste the codes from the group chat above.</div>`; $('summary').textContent = 'Paste the ballots from the group chat. Golden picks lock in first, the rest rank by points.'; return; }
+
+    const { selected, out } = tally();
+    const play = order === 'buildup' ? selected.slice().reverse() : selected;
+    const total = selected.reduce((a, r) => a + r.v.d, 0);
+    $('cutoffLabel').textContent = $('cutoff').value;
+    $('runtime').textContent = fmtLong(total);
+    $('runtimeSub').textContent = `${selected.length} videos`;
+    $('summary').textContent = `${ballots.length} ballot${ballots.length === 1 ? '' : 's'} in. ${selected.length} make the cut, ${fmtLong(total)} of screen time.`;
+    const rankOf = new Map(selected.map((r, k) => [r.v.id, k + 1]));
+    const up = play[0];
+    $('upnext').innerHTML = `
+      <span class="eyebrow" style="color:var(--accent)">${order === 'buildup' ? 'Opener' : 'Up first'} · ${String(rankOf.get(up.v.id)).padStart(2, '0')}</span>
+      <a class="big" href="${watch(up.v.id)}" target="_blank" rel="noopener"><img src="${thumbBig(up.v.id)}" alt=""></a>
+      <div class="r">
+        <div style="min-width:0">
+          <h2 class="display">${esc(up.v.t.replace(/\s*[\(\[].*$/, ''))}</h2>
+          <div class="sub">${esc(up.v.c)} · ${fmt(up.v.d)} · ${up.voters.length} voter${up.voters.length === 1 ? '' : 's'}${up.golden.length ? ' · ★ ' + esc(up.golden.map(n => n.split(' ')[0]).join(', ')) : ''}</div>
+        </div>
+        <div class="num pts" data-to="${up.total}">0<small>points</small></div>
+      </div>`;
+    let cum = 0;
+    let html = play.map(r => { cum += r.v.d; return resHtml(r, rankOf.get(r.v.id), cum, false); }).join('');
+    if (out.length) html += `<div class="line"><i></i><span>Below the line · ${out.length} more got points</span><i></i></div>` + out.map((r, k) => resHtml(r, selected.length + k + 1, null, true)).join('');
+    $('resultList').innerHTML = html;
+    watchRows($('resultList'));
+    $('resultList').querySelectorAll('.pts').forEach((el, k) => setTimeout(() => tween(el, el.dataset.to, 700), Math.min(k, 14) * 40));
+    const upPts = $('upnext').querySelector('.pts'); const small = upPts.querySelector('small');
+    const numNode = document.createTextNode('0'); upPts.replaceChildren(numNode, small);
+    const fake = { get textContent() { return numNode.data; }, set textContent(v) { numNode.data = v; }, dataset: {} };
+    tween(fake, up.total, 800);
+    setTimeout(() => { $('resultList').querySelectorAll('.pts').forEach(el => { if (el.dataset.v != el.dataset.to) { el.textContent = el.dataset.to; el.dataset.v = el.dataset.to; } }); if (numNode.data != up.total) numNode.data = up.total; }, 1800);
+    $('openQueue').onclick = () => {
+      const ids = play.slice(0, 50).map(r => r.v.id);
+      window.open('https://www.youtube.com/watch_videos?video_ids=' + ids.join(','), '_blank');
+    };
+    $('copyList').onclick = () => {
+      const text = play.map((r, k) => `${k + 1}. ${r.v.t} (${r.total} pts${r.golden.length ? ', ★ ' + r.golden.join(', ') : ''}) ${watch(r.v.id)}`).join('\n');
+      copy(text).then(ok => setMsg('resMsg', ok ? 'List copied.' : 'Could not copy.', ok ? 'ok' : 'bad'));
+    };
+  }
+
+  // ---------- boot ----------
+  if (DATA.updated) { const d = new Date(DATA.updated); $('syncLine').textContent = `Synced with the playlist · ${d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`; }
+  updateBudget();
+  renderList();
+  function handleHash() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (h.get('b')) { showTab('results'); addBallots(h.get('b')); history.replaceState(null, '', location.pathname); }
+    else if (location.hash === '#results') showTab('results');
+  }
+  handleHash();
+  window.addEventListener('hashchange', handleHash);
+  boot();
+})();
+</script>
+</body>
+</html>
