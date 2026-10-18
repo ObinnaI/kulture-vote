@@ -1,7 +1,7 @@
 {
  "title": "Kulture",
  "url": "https://www.youtube.com/playlist?list=PLZo9Bl-J-gqQ2Xyf1IMfnk-GZc2Y7zi4P",
- "updated": "2026-10-18T00:13:44Z",
+ "updated": "2026-10-18T00:36:06Z",
  "videos": [
   {
    "i": 0,
@@ -1353,6 +1353,83 @@
    "t": "The Veronicas - ’Untouched’ (live for Like A Version)",
    "c": "triple j",
    "d": 262
+  },
+  {
+   "i": 193,
+   "id": "KDorKy-13ak",
+   "t": "Kendrick Lamar's Apple Music Super Bowl Halftime Show",
+   "c": "NFL",
+   "d": 801
+  },
+  {
+   "i": 194,
+   "id": "c7ka153cW4s",
+   "t": "Shygirl - Playboy / Positions (Official Music Video)",
+   "c": "Shygirl",
+   "d": 158
+  },
+  {
+   "i": 195,
+   "id": "TX5t3xVwvFk",
+   "t": "Tove Lo & SG Lewis - HEAT (Official Music Video)",
+   "c": "Tove Lo",
+   "d": 218
+  },
+  {
+   "i": 196,
+   "id": "7m-J8KG8tBA",
+   "t": "SG Lewis - Feed The Fire ft. Lucky Daye",
+   "c": "SG Lewis",
+   "d": 267
+  },
+  {
+   "i": 197,
+   "id": "tvTRZJ-4EyI",
+   "t": "Kendrick Lamar - HUMBLE.",
+   "c": "Kendrick Lamar",
+   "d": 184
+  },
+  {
+   "i": 198,
+   "id": "fuV4yQWdn_4",
+   "t": "squabble up",
+   "c": "Kendrick Lamar",
+   "d": 166
+  },
+  {
+   "i": 199,
+   "id": "V1dtRs_vN6Y",
+   "t": "Remi Wolf - Disco Man (Official Video)",
+   "c": "Remi Wolf",
+   "d": 193
+  },
+  {
+   "i": 200,
+   "id": "BsS5NN3c0yY",
+   "t": "Eem Triplin - a love song for u (OFFICIAL VIDEO)",
+   "c": "Eem Triplin",
+   "d": 102
+  },
+  {
+   "i": 201,
+   "id": "zNfqj5nM9UA",
+   "t": "Shygirl - Cleo (Official Video)",
+   "c": "Shygirl",
+   "d": 230
+  },
+  {
+   "i": 202,
+   "id": "_3pEI2k7BZ0",
+   "t": "Remi Wolf - Cinderella (Official Video)",
+   "c": "Remi Wolf",
+   "d": 238
+  },
+  {
+   "i": 203,
+   "id": "zLXa1087N48",
+   "t": "Remi Wolf - Twiggy (Official Video)",
+   "c": "Remi Wolf",
+   "d": 242
   }
  ]
 }
