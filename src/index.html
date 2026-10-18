@@ -140,7 +140,8 @@
   .vid { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); }
   @media (min-width: 480px) { .vid { grid-template-columns: 128px minmax(0, 1fr); gap: 14px; } .vid img { width: 128px; height: 72px; } }
   .vid .body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-  .vid .bot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .vid .bot { display: flex; flex-direction: column; gap: 8px; }
+  @media (min-width: 560px) { .vid .bot { flex-direction: row; justify-content: space-between; align-items: center; } .vid .ctl { justify-content: flex-end; } }
   .vid .idx { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-right: 4px; }
   .vid a.th { display: block; border-radius: 8px; overflow: hidden; outline: 2px solid transparent; transition: outline-color .25s; line-height: 0; }
   .vid.picked a.th { outline-color: var(--accent); }
@@ -204,6 +205,17 @@
 
   .toast { position: fixed; left: 50%; top: 14px; z-index: 50; transform: translate(-50%, -140%); padding: 10px 16px; border-radius: 99px; background: var(--accent); color: var(--on-accent); font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; transition: transform .6s var(--ease); pointer-events: none; }
   .toast.show { transform: translate(-50%, 0); }
+  .cats { display: flex; gap: 6px; padding: 10px 20px 0; margin: 0 -20px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .cats::-webkit-scrollbar { display: none; }
+  @media (min-width: 480px) { .cats { padding: 10px 24px 0; margin: 0 -24px; } }
+  .cats .chip { height: 36px; padding: 0 12px; font-size: 12px; flex-shrink: 0; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line2); font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-right: 6px; vertical-align: 1px; }
+  .ctl { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-shrink: 0; }
+  .must { height: 40px; padding: 0 11px; border: 1px solid var(--line2); border-radius: 99px; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; transition: background .25s, color .25s, border-color .25s, transform .2s; }
+  .must.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .must:active { transform: scale(.95); }
+  .mustline { font-size: 13px; color: var(--text2); line-height: 1.4; }
+  .mustline b { color: var(--accent); font-weight: 600; }
   .hidden { display: none !important; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -238,7 +250,7 @@
   <section id="vote">
     <div class="hero">
       <h1 class="display"><span class="l" style="--i:0"><span>Pick</span></span><span class="l" style="--i:1"><span>what we</span></span><span class="l" style="--i:2"><span><em>watch.</em></span></span></h1>
-      <p class="fade" style="--i:3" id="intro">You have <b>100 points</b>. Put up to <b>10 on any one video</b>. Your single top pick is locked in no matter what. When you're done, copy your ballot and paste it in the group chat.</p>
+      <p class="fade" style="--i:3" id="intro">You have <b>100 points</b>. Put up to <b>10 on any one video</b>. Tap <b>★ We must</b> on one video and it's locked in no matter what. When you're done, copy your ballot and paste it in the group chat.</p>
     </div>
 
     <div class="field fade" style="--i:4">
@@ -258,6 +270,7 @@
         </div>
       </div>
       <div class="meter" id="meter"></div>
+      <div class="mustline" id="mustLine"></div>
       <button class="btn accent" id="copyBallot">Copy ballot
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg>
       </button>
@@ -294,6 +307,8 @@
         </select>
       </div>
     </div>
+
+    <div class="cats fade" style="--i:7" id="cats" role="group" aria-label="Content type"></div>
 
     <div class="list" id="videoList"></div>
 
@@ -461,7 +476,10 @@
   // ---------- vote state (keyed by YouTube id so playlist edits never shift votes) ----------
   let votes = store.get('votes2', {});
   for (const k of Object.keys(votes)) if (!byId.has(k) || !(votes[k] > 0)) delete votes[k];
-  let onlyMine = false;
+  let onlyMine = false, cat = 'all';
+  let must = store.get('must', null); if (must && !byId.has(must)) must = null;
+  const KINDS = { music: 'Music videos', live: 'Live', dance: 'Dance', comedy: 'Comedy', talk: 'Talk shows', other: 'Other' };
+  const kindOf = v => KINDS[v.k] ? v.k : 'music';
   $('name').value = store.get('name', '');
   $('name').addEventListener('input', () => { store.set('name', $('name').value.trim()); $('ballotBox').classList.add('hidden'); });
 
@@ -490,22 +508,37 @@
     $('meter').innerHTML = meterHtml(); $('meterMini').innerHTML = meterHtml();
     const picks = Object.keys(votes).length;
     $('pickCount').textContent = picks; $('pickCount2').textContent = picks;
-    $('copyBallot').disabled = spent() === 0; $('copyBallotMini').disabled = spent() === 0;
+    const can = spent() > 0 || !!must;
+    $('copyBallot').disabled = !can; $('copyBallotMini').disabled = !can;
+    const mv = must && byId.get(must);
+    $('mustLine').innerHTML = mv ? `★ We must: <b>${esc(mv.t)}</b>` : `No must-watch yet. Tap <b>★ We must</b> on one video, or your highest-pointed video takes the slot.`;
+  }
+  function setMust(id) {
+    const prev = must;
+    must = must === id ? null : id;
+    store.set('must', must);
+    $('ballotBox').classList.add('hidden');
+    updateBudget();
+    if (prev) updateRow(prev);
+    if (must) updateRow(must);
   }
 
   function rowHtml(v) {
-    const n = votes[v.id] || 0;
+    const n = votes[v.id] || 0, k = kindOf(v), isMust = must === v.id;
     const dis = n >= CAP || left() === 0;
     return `<div class="vid${n ? ' picked' : ''}" data-id="${v.id}">
       <a class="th" href="${watch(v.id)}" target="_blank" rel="noopener" title="Preview on YouTube"><img loading="lazy" src="${thumb(v.id)}" alt=""></a>
       <div class="body">
         <div class="t">${esc(v.t)}</div>
         <div class="bot">
-          <div class="m"><span class="idx">${pad3(v.i)}</span>${esc(v.c)} · ${fmt(v.d)}</div>
-          <div class="step">
-            <button data-a="dec" aria-label="Fewer points" ${n ? '' : 'disabled'}>−</button>
-            <button class="n${n ? ' on' : ''}" data-a="max" aria-label="Max points" title="Tap to max">${n}</button>
-            <button data-a="inc" aria-label="More points" ${dis ? 'disabled' : ''}>+</button>
+          <div class="m">${k !== 'music' ? `<span class="tag">${KINDS[k]}</span>` : ''}<span class="idx">${pad3(v.i)}</span>${esc(v.c)} · ${fmt(v.d)}</div>
+          <div class="ctl">
+            <button class="must${isMust ? ' on' : ''}" data-a="must" aria-pressed="${isMust}" title="Lock this one in, no matter the points">★ ${isMust ? 'Must' : 'We must'}</button>
+            <div class="step">
+              <button data-a="dec" aria-label="Fewer points" ${n ? '' : 'disabled'}>−</button>
+              <button class="n${n ? ' on' : ''}" data-a="max" aria-label="Max points" title="Tap to max">${n}</button>
+              <button data-a="inc" aria-label="More points" ${dis ? 'disabled' : ''}>+</button>
+            </div>
           </div>
         </div>
       </div>
@@ -531,7 +564,7 @@
 
   function renderList() {
     const q = $('search').value.trim().toLowerCase();
-    let list = VIDEOS.filter(v => (!q || (v.t + ' ' + v.c).toLowerCase().includes(q)) && (!onlyMine || votes[v.id]));
+    let list = VIDEOS.filter(v => (!q || (v.t + ' ' + v.c).toLowerCase().includes(q)) && (!onlyMine || votes[v.id]) && (cat === 'all' || kindOf(v) === cat));
     const sort = $('sort').value;
     if (sort === 'mine') list = list.slice().sort((a, b) => (votes[b.id] || 0) - (votes[a.id] || 0) || a.i - b.i);
     if (sort === 'title') list = list.slice().sort((a, b) => a.t.localeCompare(b.t));
@@ -540,9 +573,19 @@
     watchRows($('videoList'));
   }
 
+  function renderCats() {
+    const counts = {}; VIDEOS.forEach(v => { const k = kindOf(v); counts[k] = (counts[k] || 0) + 1; });
+    const order = ['all', ...Object.keys(KINDS).filter(k => counts[k])];
+    $('cats').innerHTML = order.map(k => `<button class="chip${cat === k ? ' on' : ''}" data-cat="${k}">${k === 'all' ? 'All' : KINDS[k]} <span class="mono">${k === 'all' ? VIDEOS.length : counts[k]}</span></button>`).join('');
+  }
+  $('cats').addEventListener('click', e => {
+    const b = e.target.closest('button[data-cat]'); if (!b) return;
+    cat = b.dataset.cat; renderCats(); renderList();
+  });
   $('videoList').addEventListener('click', e => {
     const b = e.target.closest('button[data-a]'); if (!b) return;
     const id = b.closest('.vid').dataset.id, n = votes[id] || 0;
+    if (b.dataset.a === 'must') { setMust(id); return; }
     if (b.dataset.a === 'inc') setVote(id, n + 1);
     if (b.dataset.a === 'dec') setVote(id, n - 1);
     if (b.dataset.a === 'max') setVote(id, n >= CAP ? 0 : CAP);
@@ -550,7 +593,7 @@
   $('search').addEventListener('input', renderList);
   $('sort').addEventListener('change', renderList);
   $('onlyMine').onclick = () => { onlyMine = !onlyMine; $('onlyMine').classList.toggle('on', onlyMine); renderList(); };
-  $('resetVotes').onclick = () => { if (confirm('Clear all your points?')) { votes = {}; store.set('votes2', votes); updateBudget(); renderList(); $('ballotBox').classList.add('hidden'); } };
+  $('resetVotes').onclick = () => { if (confirm('Clear all your points and your must-watch?')) { votes = {}; must = null; store.set('votes2', votes); store.set('must', null); updateBudget(); renderList(); $('ballotBox').classList.add('hidden'); } };
 
   let stickyOn = false;
   function checkSticky() {
@@ -564,7 +607,7 @@
   function ballotCode() {
     const name = $('name').value.trim().replace(/[|,:\s]+/g, ' ').trim();
     const parts = VIDEOS.filter(v => votes[v.id]).map(v => `${v.id}:${votes[v.id]}`);
-    return `${VER}|${name}|${parts.join(',')}`;
+    return `${VER}|${name}|${parts.join(',')}${must ? '|' + must : ''}`;
   }
   function shareLink(code) { return location.origin + location.pathname + '#b=' + encodeURIComponent(code); }
   async function copy(text) {
@@ -595,13 +638,14 @@
 
   // ---------- results ----------
   let ballots = store.get('ballots2', []);
-  const RX2 = /KV2\|([^|\n]{1,40}?)\|([A-Za-z0-9_-]{11}:[0-9]+(?:,[A-Za-z0-9_-]{11}:[0-9]+)*)/g;
+  const RX2 = /KV2\|([^|\n]{1,40}?)\|((?:[A-Za-z0-9_-]{11}:[0-9]+(?:,[A-Za-z0-9_-]{11}:[0-9]+)*)?)(?:\|([A-Za-z0-9_-]{11}))?/g;
   const RX1 = /KV1\|([^|\n]{1,40}?)\|([0-9]+:[0-9]+(?:,[0-9]+:[0-9]+)*)/g;
 
   function parseBallots(text) {
     const found = [], errors = []; let skipped = 0;
-    const take = (name, pairs, resolve) => {
+    const take = (name, pairs, resolve, mustId) => {
       const v = {}; let total = 0, bad = null;
+      if (mustId && !byId.has(mustId)) { mustId = null; skipped++; }
       for (const [key, n] of pairs) {
         const vid = resolve(key);
         if (!vid) { skipped++; continue; }
@@ -609,11 +653,11 @@
         v[vid.id] = (v[vid.id] || 0) + n; total += n;
       }
       if (!bad && total > BUDGET) bad = `${total} points spent (max ${BUDGET})`;
-      if (!bad && !total) bad = 'none of its videos are in the playlist any more';
+      if (!bad && !total && !mustId) bad = 'none of its videos are in the playlist any more';
       if (bad) errors.push(`${name}: rejected, ${bad}.`);
-      else found.push({ name, votes: v });
+      else found.push({ name, votes: v, must: mustId || null });
     };
-    for (const m of text.matchAll(RX2)) take(m[1].trim(), m[2].split(',').map(p => { const [id, n] = p.split(':'); return [id, +n]; }), id => byId.get(id));
+    for (const m of text.matchAll(RX2)) take(m[1].trim(), m[2] ? m[2].split(',').map(p => { const [id, n] = p.split(':'); return [id, +n]; }) : [], id => byId.get(id), m[3]);
     for (const m of text.matchAll(RX1)) take(m[1].trim(), m[2].split(',').map(p => p.split(':').map(Number)), i => byIndex.get(i));
     return { found, errors, skipped };
   }
@@ -659,7 +703,8 @@
         r.total += n; r.voters.push({ name: b.name, n, color: COLORS[bi % COLORS.length] }); r.max = Math.max(r.max, n);
         if (!best || n > best.n || (n === best.n && r.v.i < best.i)) best = { id, n, i: r.v.i };
       }
-      if (best) row(best.id).golden.push(b.name);
+      if (b.must && byId.has(b.must)) row(b.must).golden.push(b.name);
+      else if (best) row(best.id).golden.push(b.name);
     });
     const score = (a, b) => b.total - a.total || b.voters.length - a.voters.length || b.max - a.max || a.v.i - b.v.i;
     const all = [...rows.values()].sort(score);
@@ -752,8 +797,9 @@
       DATA = d; VIDEOS = d.videos;
       byId = new Map(VIDEOS.map(v => [v.id, v])); byIndex = new Map(VIDEOS.map(v => [v.i, v]));
       for (const k of Object.keys(votes)) if (!byId.has(k)) delete votes[k];
+      if (must && !byId.has(must)) { must = null; store.set('must', null); }
       store.set('votes2', votes);
-      updateBudget(); renderList(); syncLine();
+      updateBudget(); renderCats(); renderList(); syncLine();
       if (!$('results').classList.contains('hidden')) renderResults();
       const diff = VIDEOS.length - before;
       toast(`Playlist updated · ${diff > 0 ? '+' + diff : diff < 0 ? diff : 'same count'} · ${VIDEOS.length} videos`);
@@ -765,6 +811,7 @@
   // ---------- boot ----------
   if (DATA.updated) { const d = new Date(DATA.updated); $('syncLine').textContent = `Synced with the playlist · ${d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`; }
   updateBudget();
+  renderCats();
   renderList();
   function handleHash() {
     const h = new URLSearchParams(location.hash.slice(1));

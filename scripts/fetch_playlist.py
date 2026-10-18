@@ -17,6 +17,7 @@ from pathlib import Path
 PLAYLIST = "https://www.youtube.com/playlist?list=PLZo9Bl-J-gqQ2Xyf1IMfnk-GZc2Y7zi4P"
 ROOT = Path(__file__).resolve().parent.parent
 VIDEOS = ROOT / "videos.json"
+CATEGORIES = ROOT / "categories.json"
 TEMPLATE = ROOT / "src" / "index.html"
 INDEX = ROOT / "index.html"
 START = "<!--VIDEOS:START-->"
@@ -29,17 +30,47 @@ def fetch_raw():
     return json.loads(out.stdout)
 
 
+KIND_RULES = [
+    ("live", ["tiny desk", "live at", "live from", "(live", "live)", "like a version", "performance", "performs",
+              "vmas", "halftime", "sessions", "saturday night live", "snl", "coachella", "glastonbury", "unplugged", "acoustic"]),
+    ("dance", ["choreo", "dance video", "dance visual", "dance class", "dance studio", "dance complex", "drop-in class",
+               "world of dance", "millennium", "1million", "steezy", "battle", "vogue", "workshop", "cdk - "]),
+    ("talk", ["interview", "talk show", "late show", "tonight show", "podcast", "late night", "ziwe", "hot ones"]),
+    ("comedy", ["stand up", "stand-up", "standup", "comedy", "parody", "sketch", "funny"]),
+    ("other", ["campaign", "commercial", "advert", "| gap", "gap |", "trailer"]),
+]
+
+
+def guess_kind(title, channel):
+    hay = f"{title} | {channel}".lower()
+    for kind, words in KIND_RULES:
+        if any(w in hay for w in words):
+            return kind
+    return "music"
+
+
+def load_categories():
+    try:
+        return json.loads(CATEGORIES.read_text()).get("videos", {})
+    except FileNotFoundError:
+        return {}
+
+
 def to_videos(raw):
+    cats = load_categories()
     vids = []
     for i, e in enumerate(raw["entries"]):
         if e.get("title") in ("[Private video]", "[Deleted video]"):
             continue
+        title = e.get("title", "")
+        channel = e.get("channel") or e.get("uploader") or ""
         vids.append({
             "i": i,
             "id": e["id"],
-            "t": e.get("title", ""),
-            "c": e.get("channel") or e.get("uploader") or "",
+            "t": title,
+            "c": channel,
             "d": int(e.get("duration") or 0),
+            "k": cats.get(e["id"]) or guess_kind(title, channel),
         })
     return vids
 
@@ -61,6 +92,10 @@ def main():
     old = json.loads(VIDEOS.read_text()) if VIDEOS.exists() else {}
     if a.build_only:
         data = old
+        cats = load_categories()
+        for v in data.get("videos", []):
+            v["k"] = cats.get(v["id"]) or guess_kind(v["t"], v["c"])
+        VIDEOS.write_text(json.dumps(data, ensure_ascii=False, indent=1))
     else:
         raw = json.loads(Path(a.raw).read_text()) if a.raw else fetch_raw()
         vids = to_videos(raw)
