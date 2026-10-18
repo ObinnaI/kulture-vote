@@ -202,6 +202,8 @@
   .bottombar .btn { flex: 1; height: 50px; font-size: 13px; padding: 0 14px; min-width: 0; }
   .bottombar .btn.ghost { flex: 0 0 auto; height: 50px; padding: 0 16px; }
 
+  .toast { position: fixed; left: 50%; top: 14px; z-index: 50; transform: translate(-50%, -140%); padding: 10px 16px; border-radius: 99px; background: var(--accent); color: var(--on-accent); font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; transition: transform .6s var(--ease); pointer-events: none; }
+  .toast.show { transform: translate(-50%, 0); }
   .hidden { display: none !important; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -343,6 +345,7 @@
   </section>
 </div>
 
+<div class="toast" id="toast" role="status"></div>
 <div class="bottombar" id="bottombar">
   <div class="in">
     <button class="btn accent" id="openQueue">
@@ -357,10 +360,10 @@
 <script>
 (() => {
   const BUDGET = 100, CAP = 10, VER = 'KV2';
-  const DATA = JSON.parse(document.getElementById('videos').textContent);
-  const VIDEOS = DATA.videos;
-  const byId = new Map(VIDEOS.map(v => [v.id, v]));
-  const byIndex = new Map(VIDEOS.map(v => [v.i, v]));
+  let DATA = JSON.parse(document.getElementById('videos').textContent);
+  let VIDEOS = DATA.videos;
+  let byId = new Map(VIDEOS.map(v => [v.id, v]));
+  let byIndex = new Map(VIDEOS.map(v => [v.i, v]));
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt = s => { const m = Math.floor(s/60), r = s%60; return m + ':' + String(r).padStart(2,'0'); };
@@ -733,6 +736,31 @@
       copy(text).then(ok => setMsg('resMsg', ok ? 'List copied.' : 'Could not copy.', ok ? 'ok' : 'bad'));
     };
   }
+
+  // ---------- live sync: pick up playlist changes without a reload ----------
+  let toastT;
+  function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3500); }
+  function syncLine() { if (DATA.updated) { const d = new Date(DATA.updated); $('syncLine').textContent = `Synced with the playlist · ${d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`; } }
+  async function syncData() {
+    if (document.hidden || location.protocol === 'file:') return;
+    try {
+      const r = await fetch(`videos.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!d || !Array.isArray(d.videos) || !d.videos.length || d.updated === DATA.updated) return;
+      const before = VIDEOS.length;
+      DATA = d; VIDEOS = d.videos;
+      byId = new Map(VIDEOS.map(v => [v.id, v])); byIndex = new Map(VIDEOS.map(v => [v.i, v]));
+      for (const k of Object.keys(votes)) if (!byId.has(k)) delete votes[k];
+      store.set('votes2', votes);
+      updateBudget(); renderList(); syncLine();
+      if (!$('results').classList.contains('hidden')) renderResults();
+      const diff = VIDEOS.length - before;
+      toast(`Playlist updated · ${diff > 0 ? '+' + diff : diff < 0 ? diff : 'same count'} · ${VIDEOS.length} videos`);
+    } catch {}
+  }
+  setInterval(syncData, 120000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncData(); });
 
   // ---------- boot ----------
   if (DATA.updated) { const d = new Date(DATA.updated); $('syncLine').textContent = `Synced with the playlist · ${d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`; }

@@ -2,8 +2,15 @@ name: Refresh playlist
 
 on:
   schedule:
-    - cron: "17 */6 * * *"   # every 6 hours
+    - cron: "17 */6 * * *"   # every 6 hours: one check, then exit
   workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Keep polling for this many minutes (0 = check once). Max 350."
+        default: "0"
+      interval:
+        description: "Seconds between checks while polling"
+        default: "120"
 
 permissions:
   contents: write
@@ -15,19 +22,34 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 358
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install --quiet yt-dlp
-      - run: python3 scripts/fetch_playlist.py
-      - name: Commit if the playlist changed
+      - name: Poll the playlist and commit when it changes
+        env:
+          MINUTES: ${{ github.event.inputs.minutes || '0' }}
+          INTERVAL: ${{ github.event.inputs.interval || '120' }}
         run: |
-          if git diff --quiet; then
-            echo "No change"; exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "Refresh playlist from YouTube"
-          git push
+          end=$(( $(date +%s) + MINUTES * 60 ))
+          while :; do
+            if python3 scripts/fetch_playlist.py; then
+              if git diff --quiet; then
+                echo "$(date -u +%H:%M:%S) no change"
+              else
+                git commit -qam "Refresh playlist from YouTube"
+                git pull -q --rebase origin main || true
+                git push -q origin HEAD:main && echo "$(date -u +%H:%M:%S) pushed update"
+              fi
+            else
+              echo "$(date -u +%H:%M:%S) fetch failed, will retry"
+              git checkout -q -- . || true
+            fi
+            [ "$(date +%s)" -ge "$end" ] && break
+            sleep "$INTERVAL"
+          done
